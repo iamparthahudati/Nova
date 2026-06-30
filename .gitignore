@@ -1,0 +1,5 @@
+.env
+rai.db
+__pycache__/
+*.py[cod]
+*.log
