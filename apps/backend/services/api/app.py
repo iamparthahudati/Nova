@@ -18,6 +18,7 @@ from services.api.errors import register_exception_handlers
 from services.api.routers import calendar as calendar_router
 from services.api.routers import (
     chat,
+    finance,
     graph,
     health,
     home,
@@ -77,6 +78,7 @@ def create_app() -> FastAPI:
     app.include_router(memories.router)
     app.include_router(graph.router)
     app.include_router(spending.router)
+    app.include_router(finance.router)
     app.include_router(products.router)
     app.include_router(settings.router)
     app.include_router(home.router)

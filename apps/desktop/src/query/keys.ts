@@ -18,6 +18,24 @@ export const queryKeys = {
   graph: (params?: { entityLimit?: number; edgeLimit?: number }) =>
     [...queryKeys.all, 'graph', params ?? {}] as const,
   settings: () => [...queryKeys.all, 'settings'] as const,
+  finance: {
+    dashboard: () => [...queryKeys.all, 'finance', 'dashboard'] as const,
+    accounts: (params?: { includeArchived?: boolean }) =>
+      [...queryKeys.all, 'finance', 'accounts', params ?? {}] as const,
+    creditCards: () => [...queryKeys.all, 'finance', 'credit-cards'] as const,
+    creditCard: (accountId: number) => [...queryKeys.all, 'finance', 'credit-cards', accountId] as const,
+    statements: (params: { accountId: number; limit?: number }) =>
+      [...queryKeys.all, 'finance', 'statements', params] as const,
+    statementsAll: () => [...queryKeys.all, 'finance', 'statements'] as const,
+    transactions: (params?: Record<string, unknown>) =>
+      [...queryKeys.all, 'finance', 'transactions', params ?? {}] as const,
+    rewards: (params?: { accountId?: number }) =>
+      [...queryKeys.all, 'finance', 'rewards', params ?? {}] as const,
+    rewardLedger: (programId: number) => [...queryKeys.all, 'finance', 'rewards', programId, 'ledger'] as const,
+    cashback: () => [...queryKeys.all, 'finance', 'cashback'] as const,
+    categories: () => [...queryKeys.all, 'finance', 'categories'] as const,
+    merchants: () => [...queryKeys.all, 'finance', 'merchants'] as const,
+  },
   system: {
     status: () => [...queryKeys.all, 'system', 'status'] as const,
   },

@@ -5,7 +5,11 @@ from __future__ import annotations
 from typing import Optional
 
 import memory
+from domains.finance.errors import FinanceValidationError
+from domains.finance.services.transaction_service import TransactionService
 from services import calendar
+
+_transaction_service = TransactionService()
 
 
 class TaskNotFoundError(LookupError):
@@ -78,6 +82,16 @@ def create_reminder(
 def log_spending(type_: str, amount: float, note: str = "") -> tuple[dict, str]:
     if type_ not in {"earned", "spent"}:
         raise SpendingTypeInvalidError(type_)
-    row = memory.add_money(type_, amount, note)
+    try:
+        txn = _transaction_service.log_legacy_spending(type_, amount, note, source="manual")
+    except FinanceValidationError as exc:
+        raise SpendingTypeInvalidError(type_) from exc
+    row = {
+        "id": txn.id,
+        "type": type_,
+        "amount": txn.amount_minor / 100.0,
+        "note": txn.note or "",
+        "created_at": txn.created_at,
+    }
     message = "Logged earnings." if type_ == "earned" else "Logged expense."
     return row, message

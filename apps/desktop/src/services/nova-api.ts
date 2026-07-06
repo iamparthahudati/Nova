@@ -1,7 +1,23 @@
 import type {
+  AccountMutationResponse,
+  AccountsResponse,
   CalendarResponse,
+  CashbackSummaryResponse,
+  CategoriesResponse,
+  CategoryMutationResponse,
+  CreateCardPaymentRequest,
+  CreateCategoryRequest,
+  CreateMerchantRequest,
+  CreateTransferRequest,
+  CreateAccountRequest,
+  CreateCreditCardRequest,
   CreateReminderRequest,
   CreateTaskRequest,
+  CreateTransactionRequest,
+  CreditCardMutationResponse,
+  CreditCardResponse,
+  CreditCardsResponse,
+  FinanceDashboardResponse,
   GraphSnapshotResponse,
   HomeResponse,
   LogSpendingRequest,
@@ -9,15 +25,41 @@ import type {
   ProductsResponse,
   ReminderMutationResponse,
   RemindersResponse,
+  RewardLedgerResponse,
+  RewardProgramsResponse,
   SettingsResponse,
   SpendingMutationResponse,
   SpendingResponse,
+  MerchantsResponse,
+  MerchantMutationResponse,
+  PayStatementRequest,
+  StatementMutationResponse,
+  StatementResponse,
+  TransferMutationResponse,
+  UpdateCategoryRequest,
+  UpdateStatementRequest,
+  StatementsResponse,
   SystemStatusResponse,
   TaskMutationResponse,
   TasksResponse,
+  TransactionMutationResponse,
+  TransactionsResponse,
+  UpdateAccountRequest,
 } from '@nova/api-contracts'
-import { apiGet, apiPost } from '@/lib/api-client'
+import { apiDelete, apiGet, apiPatch, apiPost } from '@/lib/api-client'
 import { mapCalendar } from '@/mappers/calendar'
+import {
+  mapAccount,
+  mapCashbackSummary,
+  mapCategory,
+  mapCreditCard,
+  mapFinanceDashboard,
+  mapMerchant,
+  mapRewardLedger,
+  mapRewardProgram,
+  mapStatementList,
+  mapTransactionsPage,
+} from '@/mappers/finance'
 import { mapGraph } from '@/mappers/graph'
 import { mapHome } from '@/mappers/home'
 import { mapMemories } from '@/mappers/memories'
@@ -39,6 +81,18 @@ import type {
   SystemStatusViewModel,
   Task,
 } from '@/view-models'
+import type {
+  CashbackSummary,
+  FinanceAccount,
+  FinanceCategory,
+  FinanceCreditCard,
+  FinanceDashboard,
+  FinanceMerchant,
+  FinanceStatement,
+  RewardLedger,
+  RewardProgram,
+  TransactionsPage,
+} from '@/view-models/finance'
 
 export async function fetchProducts(): Promise<Product[]> {
   const response = await apiGet<ProductsResponse>('/products')
@@ -123,4 +177,155 @@ export async function fetchSettings(): Promise<SettingsViewModel> {
 export async function fetchSystemStatus(): Promise<SystemStatusViewModel> {
   const response = await apiGet<SystemStatusResponse>('/system/status')
   return mapSystemStatus(response)
+}
+
+export async function fetchFinanceDashboard(): Promise<FinanceDashboard> {
+  const response = await apiGet<FinanceDashboardResponse>('/finance/dashboard')
+  return mapFinanceDashboard(response)
+}
+
+export async function fetchAccounts(includeArchived = false): Promise<FinanceAccount[]> {
+  const response = await apiGet<AccountsResponse>('/finance/accounts', {
+    include_archived: includeArchived ? 'true' : undefined,
+  })
+  return response.accounts.map(mapAccount)
+}
+
+export async function createAccountRaw(input: CreateAccountRequest): Promise<AccountMutationResponse> {
+  return apiPost<CreateAccountRequest, AccountMutationResponse>('/finance/accounts', input)
+}
+
+export async function updateAccountRaw(
+  accountId: number,
+  input: UpdateAccountRequest,
+): Promise<AccountMutationResponse> {
+  return apiPatch<UpdateAccountRequest, AccountMutationResponse>(`/finance/accounts/${accountId}`, input)
+}
+
+export async function archiveAccountRaw(accountId: number): Promise<AccountMutationResponse> {
+  return apiPost<Record<string, never>, AccountMutationResponse>(`/finance/accounts/${accountId}/archive`, {})
+}
+
+export async function fetchCreditCards(): Promise<FinanceCreditCard[]> {
+  const response = await apiGet<CreditCardsResponse>('/finance/credit-cards')
+  return response.cards.map(mapCreditCard)
+}
+
+export async function fetchCreditCard(accountId: number): Promise<FinanceCreditCard> {
+  const response = await apiGet<CreditCardResponse>(`/finance/credit-cards/${accountId}`)
+  return mapCreditCard(response)
+}
+
+export async function createCreditCardRaw(input: CreateCreditCardRequest): Promise<CreditCardMutationResponse> {
+  return apiPost<CreateCreditCardRequest, CreditCardMutationResponse>('/finance/credit-cards', input)
+}
+
+export async function fetchStatements(accountId: number, limit = 24): Promise<FinanceStatement[]> {
+  const response = await apiGet<StatementsResponse>('/finance/statements', { account_id: accountId, limit })
+  return mapStatementList(response.statements)
+}
+
+export async function fetchStatement(statementId: number): Promise<FinanceStatement> {
+  const response = await apiGet<StatementResponse>(`/finance/statements/${statementId}`)
+  return mapStatementList([response])[0]
+}
+
+export async function fetchFinanceTransactions(params?: {
+  accountId?: number
+  categoryId?: number
+  merchantId?: number
+  direction?: string
+  kind?: string
+  startDate?: string
+  endDate?: string
+  search?: string
+  limit?: number
+  offset?: number
+}): Promise<TransactionsPage> {
+  const response = await apiGet<TransactionsResponse>('/finance/transactions', {
+    account_id: params?.accountId,
+    category_id: params?.categoryId,
+    merchant_id: params?.merchantId,
+    direction: params?.direction,
+    kind: params?.kind,
+    start_date: params?.startDate,
+    end_date: params?.endDate,
+    search: params?.search,
+    limit: params?.limit ?? 50,
+    offset: params?.offset ?? 0,
+  })
+  return mapTransactionsPage(response)
+}
+
+export async function createTransactionRaw(input: CreateTransactionRequest): Promise<TransactionMutationResponse> {
+  return apiPost<CreateTransactionRequest, TransactionMutationResponse>('/finance/transactions', input)
+}
+
+export async function fetchRewardPrograms(accountId?: number): Promise<RewardProgram[]> {
+  const response = await apiGet<RewardProgramsResponse>('/finance/rewards/programs', { account_id: accountId })
+  return response.programs.map(mapRewardProgram)
+}
+
+export async function fetchRewardLedger(programId: number, limit = 50, offset = 0): Promise<RewardLedger> {
+  const response = await apiGet<RewardLedgerResponse>(`/finance/rewards/programs/${programId}/ledger`, {
+    limit,
+    offset,
+  })
+  return mapRewardLedger(response)
+}
+
+export async function fetchCashbackSummary(): Promise<CashbackSummary> {
+  const response = await apiGet<CashbackSummaryResponse>('/finance/cashback')
+  return mapCashbackSummary(response)
+}
+
+export async function fetchCategories(): Promise<FinanceCategory[]> {
+  const response = await apiGet<CategoriesResponse>('/finance/categories')
+  return response.categories.map(mapCategory)
+}
+
+export async function createCategoryRaw(input: CreateCategoryRequest): Promise<CategoryMutationResponse> {
+  return apiPost<CreateCategoryRequest, CategoryMutationResponse>('/finance/categories', input)
+}
+
+export async function updateCategoryRaw(
+  categoryId: number,
+  input: UpdateCategoryRequest,
+): Promise<CategoryMutationResponse> {
+  return apiPatch<UpdateCategoryRequest, CategoryMutationResponse>(`/finance/categories/${categoryId}`, input)
+}
+
+export async function deleteCategoryRaw(categoryId: number): Promise<CategoryMutationResponse> {
+  return apiDelete<CategoryMutationResponse>(`/finance/categories/${categoryId}`)
+}
+
+export async function fetchMerchants(): Promise<FinanceMerchant[]> {
+  const response = await apiGet<MerchantsResponse>('/finance/merchants')
+  return response.merchants.map(mapMerchant)
+}
+
+export async function createMerchantRaw(input: CreateMerchantRequest): Promise<MerchantMutationResponse> {
+  return apiPost<CreateMerchantRequest, MerchantMutationResponse>('/finance/merchants', input)
+}
+
+export async function createTransferRaw(input: CreateTransferRequest): Promise<TransferMutationResponse> {
+  return apiPost<CreateTransferRequest, TransferMutationResponse>('/finance/transfers', input)
+}
+
+export async function createCardPaymentRaw(input: CreateCardPaymentRequest): Promise<TransferMutationResponse> {
+  return apiPost<CreateCardPaymentRequest, TransferMutationResponse>('/finance/payments/card', input)
+}
+
+export async function payStatementRaw(
+  statementId: number,
+  input: PayStatementRequest,
+): Promise<TransferMutationResponse> {
+  return apiPost<PayStatementRequest, TransferMutationResponse>(`/finance/statements/${statementId}/pay`, input)
+}
+
+export async function updateStatementRaw(
+  statementId: number,
+  input: UpdateStatementRequest,
+): Promise<StatementMutationResponse> {
+  return apiPatch<UpdateStatementRequest, StatementMutationResponse>(`/finance/statements/${statementId}`, input)
 }

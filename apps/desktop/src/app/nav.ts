@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import {
+  Banknote,
   CalendarDays,
   CircuitBoard,
   ClipboardList,
@@ -7,7 +8,6 @@ import {
   MessageSquareText,
   Settings,
   ShoppingBag,
-  Wallet,
   Waypoints,
 } from 'lucide-react'
 
@@ -24,7 +24,7 @@ export const navItems: NavItem[] = [
   { label: 'Knowledge Graph', path: '/knowledge-graph', icon: Waypoints },
   { label: 'Calendar', path: '/calendar', icon: CalendarDays },
   { label: 'Tasks', path: '/tasks', icon: ClipboardList },
-  { label: 'Spending', path: '/spending', icon: Wallet },
+  { label: 'Finance', path: '/finance', icon: Banknote },
   { label: 'Products', path: '/products', icon: ShoppingBag },
   { label: 'Settings', path: '/settings', icon: Settings },
 ]

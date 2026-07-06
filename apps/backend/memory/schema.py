@@ -115,12 +115,148 @@ def init_db() -> None:
                 source_memory_id TEXT REFERENCES memories(id),
                 created_at       TEXT NOT NULL
             );
+
+            CREATE TABLE IF NOT EXISTS accounts (
+                id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+                name                  TEXT    NOT NULL,
+                type                  TEXT    NOT NULL CHECK (type IN ('cash','bank','wallet','credit_card')),
+                classification        TEXT    NOT NULL DEFAULT 'asset'
+                                      CHECK (classification IN ('asset','liability')),
+                currency              TEXT    NOT NULL DEFAULT 'INR',
+                opening_balance_minor INTEGER NOT NULL DEFAULT 0,
+                opening_balance_on    TEXT    NOT NULL,
+                archived_at           TEXT,
+                created_at            TEXT    NOT NULL,
+                updated_at            TEXT    NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS card_profiles (
+                account_id            INTEGER PRIMARY KEY REFERENCES accounts(id),
+                network               TEXT,
+                last4                 TEXT,
+                credit_limit_minor    INTEGER NOT NULL CHECK (credit_limit_minor > 0),
+                statement_day         INTEGER NOT NULL CHECK (statement_day BETWEEN 1 AND 31),
+                due_day_offset        INTEGER NOT NULL CHECK (due_day_offset > 0),
+                autopay               INTEGER NOT NULL DEFAULT 0,
+                created_at            TEXT    NOT NULL,
+                updated_at            TEXT    NOT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS statements (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                account_id       INTEGER NOT NULL REFERENCES accounts(id),
+                period_start     TEXT    NOT NULL,
+                period_end       TEXT    NOT NULL,
+                statement_date   TEXT    NOT NULL,
+                due_date         TEXT    NOT NULL,
+                total_due_minor  INTEGER,
+                min_due_minor    INTEGER,
+                created_at       TEXT    NOT NULL,
+                updated_at       TEXT    NOT NULL,
+                deleted_at       TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS finance_categories (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                name       TEXT    NOT NULL,
+                created_at TEXT    NOT NULL,
+                updated_at TEXT    NOT NULL,
+                deleted_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS finance_merchants (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                name       TEXT    NOT NULL,
+                created_at TEXT    NOT NULL,
+                updated_at TEXT    NOT NULL,
+                deleted_at TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS transactions (
+                id                INTEGER PRIMARY KEY AUTOINCREMENT,
+                account_id        INTEGER NOT NULL REFERENCES accounts(id),
+                direction         TEXT    NOT NULL CHECK (direction IN ('debit','credit')),
+                kind              TEXT    NOT NULL
+                                  CHECK (kind IN ('expense','income','transfer','card_payment','adjustment')),
+                amount_minor      INTEGER NOT NULL CHECK (amount_minor > 0),
+                category_id       INTEGER REFERENCES finance_categories(id),
+                merchant_id       INTEGER REFERENCES finance_merchants(id),
+                note              TEXT,
+                occurred_on       TEXT    NOT NULL,
+                transfer_group_id TEXT,
+                statement_id      INTEGER REFERENCES statements(id),
+                source            TEXT    NOT NULL DEFAULT 'manual'
+                                  CHECK (source IN ('manual','chat','voice','migrated_money')),
+                legacy_money_id   INTEGER,
+                created_at        TEXT    NOT NULL,
+                updated_at        TEXT    NOT NULL,
+                deleted_at        TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS reward_programs (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                account_id       INTEGER NOT NULL REFERENCES accounts(id),
+                name             TEXT    NOT NULL,
+                unit             TEXT    NOT NULL
+                                 CHECK (unit IN ('points','cashback_minor')),
+                earn_rate_note   TEXT,
+                expiry_note      TEXT,
+                created_at       TEXT    NOT NULL,
+                updated_at       TEXT    NOT NULL,
+                deleted_at       TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS reward_events (
+                id               INTEGER PRIMARY KEY AUTOINCREMENT,
+                program_id       INTEGER NOT NULL REFERENCES reward_programs(id),
+                kind             TEXT    NOT NULL
+                                 CHECK (kind IN ('earned','redeemed','expired','adjusted')),
+                direction        TEXT    NOT NULL CHECK (direction IN ('credit','debit')),
+                amount           INTEGER NOT NULL CHECK (amount > 0),
+                transaction_id   INTEGER REFERENCES transactions(id),
+                note             TEXT,
+                occurred_on      TEXT    NOT NULL,
+                created_at       TEXT    NOT NULL,
+                updated_at       TEXT    NOT NULL,
+                deleted_at       TEXT
+            );
+
+            CREATE TABLE IF NOT EXISTS cashback_rules (
+                id                         INTEGER PRIMARY KEY AUTOINCREMENT,
+                program_id                 INTEGER NOT NULL REFERENCES reward_programs(id),
+                account_id                 INTEGER REFERENCES accounts(id),
+                name                       TEXT    NOT NULL,
+                flat_rate_bps              INTEGER NOT NULL DEFAULT 0
+                                           CHECK (flat_rate_bps >= 0),
+                category_multipliers         TEXT    NOT NULL DEFAULT '{}',
+                merchant_multipliers         TEXT    NOT NULL DEFAULT '{}',
+                excluded_category_ids      TEXT    NOT NULL DEFAULT '[]',
+                excluded_merchant_ids      TEXT    NOT NULL DEFAULT '[]',
+                excluded_mcc_codes         TEXT    NOT NULL DEFAULT '[]',
+                excluded_transaction_kinds TEXT    NOT NULL DEFAULT '[]',
+                monthly_cap_minor          INTEGER CHECK (monthly_cap_minor IS NULL OR monthly_cap_minor > 0),
+                minimum_spend_minor        INTEGER NOT NULL DEFAULT 0
+                                           CHECK (minimum_spend_minor >= 0),
+                created_at                 TEXT    NOT NULL,
+                updated_at                 TEXT    NOT NULL,
+                deleted_at                 TEXT
+            );
         """)
         # Bring a pre-2.2 `memories` table up to the shape above BEFORE indexing:
         # on such a database the CREATE above is a no-op (table already exists),
         # so the 2.2 columns don't exist yet and an index over them would fail.
         _migrate_memories(con)
         _migrate_reminders(con)
+        from .finance.migrations import (
+            migrate_finance_cashback,
+            migrate_finance_credit_cards,
+            migrate_finance_indexes,
+            migrate_finance_rewards,
+        )
+
+        migrate_finance_credit_cards(con)
+        migrate_finance_rewards(con)
+        migrate_finance_cashback(con)
 
         # Dedup lookups (content_hash) and maintenance sweeps (tier, deleted_at)
         # are the hot query shapes; index them once the columns are guaranteed.
@@ -149,6 +285,11 @@ def init_db() -> None:
             CREATE INDEX IF NOT EXISTS idx_edges_from ON edges(from_entity_id);
             CREATE INDEX IF NOT EXISTS idx_edges_to   ON edges(to_entity_id);
         """)
+        migrate_finance_indexes(con)
+
+        from .finance.seed import ensure_default_cash_account
+
+        ensure_default_cash_account()
 
 
 # Columns added after 2.1. Each entry is a full column definition that is

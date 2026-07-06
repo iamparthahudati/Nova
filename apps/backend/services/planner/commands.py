@@ -9,7 +9,12 @@ from datetime import datetime, timedelta
 from typing import Optional
 
 import memory
+from domains.finance.services.projection_service import ProjectionService
+from domains.finance.services.transaction_service import TransactionService
 from services import calendar
+
+_transaction_service = TransactionService()
+_projection_service = ProjectionService()
 
 
 def log_task(text: str, due_str: Optional[str] = None) -> str:
@@ -27,7 +32,7 @@ def complete_task(text: str) -> str:
 
 
 def log_money(kind: str, amount: float, note: str = "") -> str:
-    memory.add_money(kind, amount, note)
+    _transaction_service.log_legacy_spending(kind, amount, note, source="chat")
     return "Logged earnings." if kind == "earned" else "Logged expense."
 
 
@@ -129,7 +134,7 @@ def get_spending_summary(period: str = "this week") -> str:
         end = today.strftime("%Y-%m-%d")
         label = "this week"
 
-    earned, spent = memory.get_money_totals_between(start, end)
+    earned, spent = _projection_service.compute_period_totals(start, end)
     if earned == 0 and spent == 0:
         return f"No money logged {label}."
     parts = []

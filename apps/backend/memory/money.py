@@ -1,69 +1,84 @@
+"""Legacy money API adapter over the transactions ledger."""
+
+from __future__ import annotations
+
+from datetime import date
 from typing import Optional
 
-from . import _connection
+from .finance import seed
+from .finance import transactions as txn_store
+
+
+def _transaction_to_money_row(row: dict) -> dict:
+    kind = row["kind"]
+    return {
+        "id": row["id"],
+        "type": "earned" if kind == "income" else "spent",
+        "amount": row["amount_minor"] / 100.0,
+        "note": row.get("note") or "",
+        "created_at": row["created_at"],
+    }
 
 
 def add_money(type_: str, amount: float, note: str = "") -> dict:
-    with _connection.connect() as con:
-        cur = con.execute(
-            "INSERT INTO money (type, amount, note, created_at) VALUES (?, ?, ?, ?)",
-            (type_, amount, note, _connection.now()),
-        )
-        row_id = cur.lastrowid
-    row = get_money_by_id(row_id)
-    assert row is not None
-    return row
+    if type_ not in {"earned", "spent"}:
+        raise ValueError(f"Invalid money type: {type_}")
+    if amount <= 0:
+        raise ValueError("Amount must be positive")
+    amount_minor = int(round(amount * 100))
+    if amount_minor <= 0:
+        raise ValueError("Amount must be positive")
+    account_id = seed.ensure_default_cash_account()
+    kind = "income" if type_ == "earned" else "expense"
+    direction = "credit" if type_ == "earned" else "debit"
+    row = txn_store.create_transaction(
+        {
+            "account_id": account_id,
+            "direction": direction,
+            "kind": kind,
+            "amount_minor": amount_minor,
+            "note": note,
+            "occurred_on": date.today().isoformat(),
+            "source": "chat",
+        },
+    )
+    return _transaction_to_money_row(row)
 
 
 def get_money_by_id(row_id: int) -> Optional[dict]:
-    with _connection.connect(rows=True) as con:
-        row = con.execute("SELECT * FROM money WHERE id = ?", (row_id,)).fetchone()
-    return dict(row) if row else None
+    row = txn_store.get_transaction_by_id(row_id)
+    if row is None or row["kind"] not in {"income", "expense"}:
+        return None
+    return _transaction_to_money_row(row)
 
 
 def get_latest_money(type_: str, amount: float) -> Optional[dict]:
-    """Most recent money row matching type and amount — chat translator only."""
-    with _connection.connect(rows=True) as con:
-        row = con.execute(
-            "SELECT * FROM money WHERE type = ? AND amount = ? ORDER BY created_at DESC LIMIT 1",
-            (type_, amount),
-        ).fetchone()
-    return dict(row) if row else None
+    kind = "income" if type_ == "earned" else "expense"
+    amount_minor = int(round(amount * 100))
+    row = txn_store.get_latest_income_expense(kind, amount_minor)
+    if row is None:
+        return None
+    return _transaction_to_money_row(row)
 
 
 def get_recent_money(n: int = 10) -> list[dict]:
-    with _connection.connect(rows=True) as con:
-        rows = con.execute("SELECT * FROM money ORDER BY created_at DESC LIMIT ?", (n,)).fetchall()
-    return [dict(r) for r in rows]
+    rows = txn_store.list_transactions(limit=n)
+    return [_transaction_to_money_row(row) for row in rows if row["kind"] in {"income", "expense"}]
 
 
 def get_money_since(cutoff_iso: str, limit: int = 30) -> list[dict]:
-    with _connection.connect(rows=True) as con:
-        rows = con.execute(
-            "SELECT * FROM money WHERE created_at > ? ORDER BY created_at DESC LIMIT ?",
-            (cutoff_iso, limit),
-        ).fetchall()
-    return [dict(r) for r in rows]
+    rows = txn_store.list_transactions(limit=limit)
+    filtered = [row for row in rows if row["created_at"] > cutoff_iso]
+    return [
+        _transaction_to_money_row(row) for row in filtered if row["kind"] in {"income", "expense"}
+    ]
 
 
 def get_money_totals_between(start_date: str, end_date: str) -> tuple[float, float]:
-    """Return (total_earned, total_spent) for dates in [start_date, end_date] (YYYY-MM-DD, inclusive)."""
-    with _connection.connect() as con:
-        rows = con.execute(
-            "SELECT type, SUM(amount) FROM money WHERE date(created_at) BETWEEN ? AND ? GROUP BY type",
-            (start_date, end_date),
-        ).fetchall()
-    totals = {"earned": 0.0, "spent": 0.0}
-    for type_, total in rows:
-        totals[type_] = total or 0.0
-    return totals["earned"], totals["spent"]
+    income_minor, expense_minor = txn_store.totals_between(start_date, end_date)
+    return income_minor / 100.0, expense_minor / 100.0
 
 
 def get_money_totals_for_date(date_obj) -> tuple[float, float]:
-    """Return (total_earned, total_spent) for the given local calendar date.
-
-    created_at is stored as UTC; this filters on the UTC date, same as
-    the system prompt's "today" already treats local and UTC dates as equivalent.
-    """
     date_str = date_obj.strftime("%Y-%m-%d")
     return get_money_totals_between(date_str, date_str)

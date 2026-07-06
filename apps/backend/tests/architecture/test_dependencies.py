@@ -47,6 +47,7 @@ FIRST_PARTY_ROOTS = {
     "memory",
     "runtime",
     "services",
+    "domains",
     "identity",
     "paths",
     "conversation_memory",
@@ -65,7 +66,7 @@ ALLOWED_EDGES: dict[str, set[str]] = {
     "services.automation": set(),
     "services.knowledge": {"memory", "services.brain"},
     "services.brain": {"memory"},
-    "services.planner": {"memory", "services.calendar"},
+    "services.planner": {"memory", "services.calendar", "domains.finance"},
     "services.api": {
         "memory",
         "runtime",
@@ -74,6 +75,7 @@ ALLOWED_EDGES: dict[str, set[str]] = {
         "services.planner",
     },
     "memory": set(),
+    "domains.finance": {"memory", "runtime"},
     "runtime": {
         "memory",
         "services.voice",
@@ -98,6 +100,8 @@ def _unit_for(path: Path) -> str:
         return "tests"
     if parts[0] == "services" and len(parts) > 1:
         return f"services.{parts[1]}"
+    if parts[0] == "domains" and len(parts) > 1:
+        return f"domains.{parts[1]}"
     if parts[0] in ("memory", "runtime"):
         return parts[0]
     return "root"
@@ -137,6 +141,8 @@ def _normalize(dotted: str) -> str:
     parts = dotted.split(".")
     if parts[0] == "services" and len(parts) > 1:
         return f"services.{parts[1]}"
+    if parts[0] == "domains" and len(parts) > 1:
+        return f"domains.{parts[1]}"
     return parts[0]
 
 
@@ -191,6 +197,22 @@ def test_nothing_imports_services_api():
             violations.append(str(path.relative_to(BACKEND_ROOT)))
 
     assert not violations, "Package(s) importing services.api:\n" + "\n".join(violations)
+
+
+def test_finance_domain_only_imports_memory_and_runtime():
+    """domains.finance is isolated — no other domains or services."""
+    violations = []
+    finance_root = BACKEND_ROOT / "domains" / "finance"
+    for path in finance_root.rglob("*.py"):
+        unit = "domains.finance"
+        allowed = ALLOWED_EDGES[unit]
+        for imported in _first_party_imports(path):
+            if imported in ROOT_UTILS or imported == unit:
+                continue
+            if imported not in allowed:
+                rel = path.relative_to(BACKEND_ROOT)
+                violations.append(f"{rel}: {unit} -> {imported}")
+    assert not violations, "Finance domain isolation violations:\n" + "\n".join(violations)
 
 
 def test_leaf_services_have_no_dependencies():

@@ -54,3 +54,25 @@ export async function apiPost<TReq, TRes>(path: string, body: TReq): Promise<TRe
   }
   return (await response.json()) as TRes
 }
+
+export async function apiPatch<TReq, TRes>(path: string, body: TReq): Promise<TRes> {
+  const url = new URL(path, getApiUrl())
+  const response = await fetch(url.toString(), {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    throw await parseErrorResponse(response)
+  }
+  return (await response.json()) as TRes
+}
+
+export async function apiDelete<TRes>(path: string): Promise<TRes> {
+  const url = new URL(path, getApiUrl())
+  const response = await fetch(url.toString(), { method: 'DELETE' })
+  if (!response.ok) {
+    throw await parseErrorResponse(response)
+  }
+  return (await response.json()) as TRes
+}

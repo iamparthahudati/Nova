@@ -272,6 +272,358 @@ export interface SettingsResponse {
   observations: ProfileObservationResponse[]
 }
 
+export interface FinanceDashboardResponse {
+  total_balance_minor: number
+  total_balance: number
+  total_assets_minor: number
+  total_assets: number
+  total_liabilities_minor: number
+  total_liabilities: number
+  credit_utilization_ratio: number
+  credit_utilization_percent: number
+  spent_month: number
+  reward_balance: number
+  cashback_earned_month_minor: number
+  cashback_earned_month: number
+  upcoming_due_dates: Array<Record<string, unknown>>
+  recent_transactions: Array<Record<string, unknown>>
+}
+
+export interface AccountResponse {
+  id: number
+  name: string
+  type: string
+  classification: string
+  currency: string
+  opening_balance_minor: number
+  opening_balance_on: string
+  archived_at?: string | null
+  created_at: string
+  updated_at: string
+  balance_minor?: number | null
+  balance?: number | null
+}
+
+export interface AccountsResponse {
+  accounts: AccountResponse[]
+}
+
+export interface CreateAccountRequest {
+  name: string
+  account_type: string
+  opening_balance?: number
+  opening_balance_on?: string | null
+}
+
+export interface UpdateAccountRequest {
+  name?: string | null
+  opening_balance?: number | null
+  opening_balance_on?: string | null
+}
+
+export interface AccountMutationResponse {
+  item: AccountResponse
+  meta: MutationMeta
+}
+
+export interface CreditCardResponse {
+  account_id: number
+  name: string
+  type: string
+  network?: string | null
+  last4?: string | null
+  credit_limit_minor: number
+  credit_limit: number
+  statement_day: number
+  due_day_offset: number
+  autopay: boolean
+  opening_balance_minor: number
+  opening_balance_on: string
+  archived_at?: string | null
+  created_at: string
+  updated_at: string
+  balance_minor?: number | null
+  balance?: number | null
+  outstanding_minor?: number | null
+  outstanding?: number | null
+  utilization_ratio?: number | null
+  utilization_percent?: number | null
+  available_limit_minor?: number | null
+  available_limit?: number | null
+  current_statement?: Record<string, unknown> | null
+  previous_statement?: Record<string, unknown> | null
+}
+
+export interface CreditCardsResponse {
+  cards: CreditCardResponse[]
+}
+
+export interface CreateCreditCardRequest {
+  name: string
+  credit_limit: number
+  statement_day: number
+  due_day_offset: number
+  opening_balance?: number
+  opening_balance_on?: string | null
+  network?: string | null
+  last4?: string | null
+  autopay?: boolean
+}
+
+export interface UpdateCreditCardRequest {
+  name?: string | null
+  credit_limit?: number | null
+  statement_day?: number | null
+  due_day_offset?: number | null
+  network?: string | null
+  last4?: string | null
+  autopay?: boolean | null
+}
+
+export interface CreditCardMutationResponse {
+  item: CreditCardResponse
+  meta: MutationMeta
+}
+
+export interface StatementResponse {
+  id: number
+  account_id: number
+  period_start: string
+  period_end: string
+  statement_date: string
+  due_date: string
+  total_due_minor?: number | null
+  min_due_minor?: number | null
+  created_at: string
+  updated_at: string
+  spend_minor?: number | null
+  spend?: number | null
+  paid_minor?: number | null
+  paid?: number | null
+  remaining_due_minor?: number | null
+  remaining_due?: number | null
+  status?: string | null
+  transactions?: Array<Record<string, unknown>> | null
+}
+
+export interface StatementsResponse {
+  statements: StatementResponse[]
+}
+
+export interface TransactionResponse {
+  id: number
+  account_id: number
+  direction: string
+  kind: string
+  amount_minor: number
+  amount: number
+  category_id?: number | null
+  merchant_id?: number | null
+  note?: string | null
+  occurred_on: string
+  transfer_group_id?: string | null
+  statement_id?: number | null
+  source: string
+  created_at: string
+  updated_at: string
+  account_name?: string | null
+  category_name?: string | null
+  merchant_name?: string | null
+}
+
+export interface TransactionsResponse {
+  transactions: TransactionResponse[]
+  total: number
+  limit: number
+  offset: number
+}
+
+export interface CreateTransactionRequest {
+  account_id: number
+  kind: string
+  amount: number
+  occurred_on: string
+  category_id?: number | null
+  merchant_id?: number | null
+  note?: string | null
+  direction?: string | null
+}
+
+export interface UpdateTransactionRequest {
+  amount?: number | null
+  category_id?: number | null
+  merchant_id?: number | null
+  note?: string | null
+  occurred_on?: string | null
+}
+
+export interface TransactionMutationResponse {
+  item: TransactionResponse
+  meta: MutationMeta
+}
+
+export interface CategoryResponse {
+  id: number
+  name: string
+  created_at: string
+  updated_at: string
+}
+
+export interface CategoriesResponse {
+  categories: CategoryResponse[]
+}
+
+export interface CreateCategoryRequest {
+  name: string
+}
+
+export interface UpdateCategoryRequest {
+  name: string
+}
+
+export interface CategoryMutationResponse {
+  item: CategoryResponse
+  meta: MutationMeta
+}
+
+export interface MerchantResponse {
+  id: number
+  name: string
+  created_at: string
+  updated_at: string
+}
+
+export interface MerchantsResponse {
+  merchants: MerchantResponse[]
+}
+
+export interface CreateMerchantRequest {
+  name: string
+}
+
+export interface UpdateMerchantRequest {
+  name: string
+}
+
+export interface MerchantMutationResponse {
+  item: MerchantResponse
+  meta: MutationMeta
+}
+
+export interface TransferLegResponse {
+  id: number
+  account_id: number
+  direction: string
+  kind: string
+  amount_minor: number
+  amount: number
+  note?: string | null
+  occurred_on: string
+  transfer_group_id?: string | null
+  statement_id?: number | null
+  source: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TransferGroupResponse {
+  legs: TransferLegResponse[]
+  transfer_group_id: string
+  statement_id?: number | null
+}
+
+export interface TransferMutationResponse {
+  item: TransferGroupResponse
+  meta: MutationMeta
+}
+
+export interface CreateTransferRequest {
+  from_account_id: number
+  to_account_id: number
+  amount: number
+  occurred_on: string
+  note?: string | null
+}
+
+export interface CreateCardPaymentRequest {
+  from_account_id: number
+  card_account_id: number
+  amount: number
+  occurred_on: string
+  statement_id?: number | null
+  note?: string | null
+  confirm_overpayment?: boolean
+}
+
+export interface PayStatementRequest {
+  from_account_id: number
+  payment_mode?: string
+  amount?: number | null
+  note?: string | null
+  confirm_overpayment?: boolean
+}
+
+export interface UpdateStatementRequest {
+  total_due?: number | null
+  min_due?: number | null
+}
+
+export interface StatementMutationResponse {
+  item: StatementResponse
+  meta: MutationMeta
+}
+
+export interface RewardProgramResponse {
+  id: number
+  account_id: number
+  name: string
+  unit: string
+  earn_rate_note?: string | null
+  expiry_note?: string | null
+  created_at: string
+  updated_at: string
+  balance?: Record<string, unknown> | null
+}
+
+export interface RewardProgramsResponse {
+  programs: RewardProgramResponse[]
+}
+
+export interface RewardLedgerResponse {
+  program: RewardProgramResponse
+  balance: Record<string, unknown>
+  events: Array<Record<string, unknown>>
+  yearly_earned: number
+}
+
+export interface CashbackRuleResponse {
+  id: number
+  program_id: number
+  account_id?: number | null
+  name: string
+  flat_rate_bps: number
+  flat_rate_percent: number
+  category_multipliers: Record<number, number>
+  merchant_multipliers: Record<number, number>
+  excluded_category_ids: number[]
+  excluded_merchant_ids: number[]
+  excluded_mcc_codes: string[]
+  excluded_transaction_kinds: string[]
+  monthly_cap_minor?: number | null
+  monthly_cap?: number | null
+  minimum_spend_minor: number
+  minimum_spend: number
+  created_at: string
+  updated_at: string
+  program_name?: string | null
+}
+
+export interface CashbackSummaryResponse {
+  monthly_earned_minor: number
+  monthly_earned: number
+  rules: CashbackRuleResponse[]
+}
+
 /** WebSocket envelope: { event: string, data: Record<string, unknown> } */
 export interface WebSocketEvent {
   event: string
@@ -291,6 +643,26 @@ export type EventsWebSocketEvent =
   | 'task.created'
   | 'task.updated'
   | 'spending.logged'
+  | 'finance.account.created'
+  | 'finance.account.updated'
+  | 'finance.account.archived'
+  | 'finance.credit_card.created'
+  | 'finance.credit_card.updated'
+  | 'finance.transaction.created'
+  | 'finance.transaction.updated'
+  | 'finance.transaction.deleted'
+  | 'finance.transfer.created'
+  | 'finance.card_payment.created'
+  | 'finance.statement.created'
+  | 'finance.statement.updated'
+  | 'finance.statement.paid'
+  | 'finance.category.created'
+  | 'finance.category.updated'
+  | 'finance.category.deleted'
+  | 'finance.merchant.created'
+  | 'finance.merchant.updated'
+  | 'finance.merchant.deleted'
+  | 'finance.cashback.earned'
   | 'progress.logged'
   | 'product.created'
   | 'product.updated'

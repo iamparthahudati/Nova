@@ -85,6 +85,7 @@ def now() -> str:
 def connect(rows: bool = False):
     ensure_storage_paths()
     con = sqlite3.connect(DB_PATH)
+    con.execute("PRAGMA foreign_keys = ON")
     if rows:
         con.row_factory = sqlite3.Row
     try:
