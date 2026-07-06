@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends
 
-from runtime.conversation import process_message
+from runtime.conversation import build_tool_handlers, process_message
 
 from ..dependencies import RequestContext, get_request_context
 from ..schemas import ChatRequest, ChatResponse, ToolCallRecord
 
 router = APIRouter(prefix="/chat", tags=["chat"])
+
+# Built once at import time — identical mapping to the voice/REPL entry point
+# in nova.py, so a tool behaves the same over REST as it does over voice.
+_TOOL_HANDLERS = build_tool_handlers()
 
 
 @router.post("", response_model=ChatResponse)
@@ -15,6 +19,7 @@ def post_chat(
 ) -> ChatResponse:
     result = process_message(
         body.message,
+        _TOOL_HANDLERS,
         body.conversation_id,
         speak_output=False,
         emit_events=True,

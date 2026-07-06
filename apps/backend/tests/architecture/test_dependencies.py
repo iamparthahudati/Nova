@@ -7,14 +7,23 @@ domain logic currently lives inside `memory/` and `services/planner/`).
 
 Two things this test intentionally does NOT try to do, and why:
 
-1. It does not require `runtime` to receive services purely via injection
-   from a composition root external to `runtime/`. In the real codebase,
-   `runtime/conversation.py` builds `TOOL_HANDLERS` itself by importing all
-   services directly. This is a deviation from Eng Spec's "Runtime never
-   imports Domains or Services" rule.
-   DEBT(nova-arch-1): tracked for a follow-up PR to move TOOL_HANDLERS
-   construction into `nova.py` (the actual composition root) and pass it
-   into `runtime.conversation.process_message()` as a parameter.
+1. It does not require `runtime`'s dependency on `services.*` to disappear
+   entirely. `runtime/conversation.py` still contains `build_tool_handlers()`,
+   which imports every service to build the tool-name -> service-call map.
+   DEBT(nova-arch-1) originally read this as "runtime should receive
+   TOOL_HANDLERS via injection from nova.py"; on inspection that's not quite
+   right, because *two independent entry points* (nova.py's voice/REPL loop
+   and services/api/routers/chat.py's REST endpoint) both need the identical
+   mapping — moving it into nova.py would force services/api to import the
+   composition root to get it (a worse, backwards edge), and duplicating it
+   in both places risks a tool behaving differently over voice than over
+   REST. What *was* fixed: `process_message`/`process_transcript` now take
+   `tool_handlers` as an explicit parameter (built once via
+   `build_tool_handlers()` by each entry point and passed in) instead of
+   reading a module-level `INSTRUMENTED_HANDLERS` global — the DI violation
+   that mattered for testability and hidden state is gone; the remaining
+   `runtime -> services.*` edge is a deliberate shared-factory location, not
+   an accident, and is still enforced as the current allowed baseline below.
 
 2. It does not forbid `services.api` from importing `runtime` and issuing
    writes (`finalize_mutations`) directly from REST routers. That is the

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Callable, Optional
 
 import conversation_memory
 import identity
@@ -21,54 +21,70 @@ from .mutation_chat import tool_calls_to_mutations
 from .mutation_event import MutationEvent
 from .side_effects import finalize_mutations, schedule_entity_extraction
 
-# --- Tool-handler wiring -------------------------------------------------------
-# Brain only knows tool names and input dicts; each entry adapts a tool call to
-# the service that performs it — dependency injection for brain.route().
-
-TOOL_HANDLERS = {
-    "send_whatsapp_message": lambda a: automation.send_whatsapp_message(a["contact"], a["message"]),
-    "open_app": lambda a: automation.open_app(a.get("target", "").lower().strip()),
-    "add_task": lambda a: planner.log_task(a["text"], a.get("due")),
-    "complete_task": lambda a: planner.complete_task(a["text"]),
-    "add_money": lambda a: planner.log_money(a["type"], float(a["amount"]), a.get("note", "")),
-    "add_progress": lambda a: planner.log_progress(a["note"], a.get("area", "")),
-    "add_product": lambda a: planner.add_product(a["name"], a.get("store", ""), a.get("price")),
-    "ship_product": lambda a: planner.ship_product(a["name"]),
-    "log_sale": lambda a: planner.log_sale(a["name"]),
-    "add_calendar_event": lambda a: calendar.create_event(a["title"], a["date"], a.get("time")),
-    "get_events": lambda a: calendar.describe_events(a.get("day")),
-    "add_reminder": lambda a: planner.save_reminder(
-        a["text"], a["remind_date"], a.get("remind_time")
-    ),
-    "get_weather": lambda a: knowledge.get_weather(a.get("location", "")),
-    "get_github_notifications": lambda a: knowledge.get_github_notifications(),
-    "get_rss_updates": lambda a: knowledge.get_rss_updates(),
-    "run_reflection": lambda a: knowledge.run_reflection(),
-    "journal": lambda a: knowledge.handle_journal(a["text"]),
-    "log_habit": lambda a: planner.log_habit(a["name"]),
-    "get_habits": lambda a: planner.describe_habits_today(),
-    "start_pomodoro": lambda a: automation.start_pomodoro(
-        int(a.get("minutes") or 25), voice.speak, on_complete=_remember_pomodoro
-    ),
-    "read_my_day": lambda a: planner.build_daily_plan(),
-    "get_spending_summary": lambda a: planner.get_spending_summary(a.get("period", "this week")),
-}
-
-_tool_events: list[tuple[str, dict, str]] = []
+ToolHandlers = dict[str, Callable[[dict], str]]
 
 
-def _instrument(name: str, handler):
-    """Wrap one tool handler to record (tool, args, result) for the producer pass."""
+def build_tool_handlers() -> ToolHandlers:
+    """Build the tool-name -> service-call map for Brain's tool dispatch.
 
-    def call(args):
-        result = handler(args)
-        _tool_events.append((name, args, result))
-        return result
+    Brain only knows tool names and input dicts; each entry adapts a tool call
+    to the service that performs it — dependency injection for brain.route().
 
-    return call
+    Callers (`nova.py`'s voice/REPL loop and `services/api/routers/chat.py`)
+    call this once and pass the result into `process_message`/`process_transcript`
+    rather than reaching for a module-level global — the two entry points share
+    one factory instead of each wiring (and risking drifting) their own copy.
+    """
+    return {
+        "send_whatsapp_message": lambda a: automation.send_whatsapp_message(
+            a["contact"], a["message"]
+        ),
+        "open_app": lambda a: automation.open_app(a.get("target", "").lower().strip()),
+        "add_task": lambda a: planner.log_task(a["text"], a.get("due")),
+        "complete_task": lambda a: planner.complete_task(a["text"]),
+        "add_money": lambda a: planner.log_money(a["type"], float(a["amount"]), a.get("note", "")),
+        "add_progress": lambda a: planner.log_progress(a["note"], a.get("area", "")),
+        "add_product": lambda a: planner.add_product(a["name"], a.get("store", ""), a.get("price")),
+        "ship_product": lambda a: planner.ship_product(a["name"]),
+        "log_sale": lambda a: planner.log_sale(a["name"]),
+        "add_calendar_event": lambda a: calendar.create_event(a["title"], a["date"], a.get("time")),
+        "get_events": lambda a: calendar.describe_events(a.get("day")),
+        "add_reminder": lambda a: planner.save_reminder(
+            a["text"], a["remind_date"], a.get("remind_time")
+        ),
+        "get_weather": lambda a: knowledge.get_weather(a.get("location", "")),
+        "get_github_notifications": lambda a: knowledge.get_github_notifications(),
+        "get_rss_updates": lambda a: knowledge.get_rss_updates(),
+        "run_reflection": lambda a: knowledge.run_reflection(),
+        "journal": lambda a: knowledge.handle_journal(a["text"]),
+        "log_habit": lambda a: planner.log_habit(a["name"]),
+        "get_habits": lambda a: planner.describe_habits_today(),
+        "start_pomodoro": lambda a: automation.start_pomodoro(
+            int(a.get("minutes") or 25), voice.speak, on_complete=_remember_pomodoro
+        ),
+        "read_my_day": lambda a: planner.build_daily_plan(),
+        "get_spending_summary": lambda a: planner.get_spending_summary(
+            a.get("period", "this week")
+        ),
+    }
 
 
-INSTRUMENTED_HANDLERS = {name: _instrument(name, h) for name, h in TOOL_HANDLERS.items()}
+def _instrumented(tool_handlers: ToolHandlers, tool_events: list[tuple[str, dict, str]]):
+    """Wrap each handler to record (tool, args, result) into `tool_events`.
+
+    Built fresh per `process_message()` call — no module-level mutable state
+    shared across turns.
+    """
+
+    def _wrap(name: str, handler: Callable[[dict], str]):
+        def call(args: dict) -> str:
+            result = handler(args)
+            tool_events.append((name, args, result))
+            return result
+
+        return call
+
+    return {name: _wrap(name, handler) for name, handler in tool_handlers.items()}
 
 
 def _journal_mutations(tools_called: list[dict]) -> list[MutationEvent]:
@@ -118,12 +134,16 @@ class ConversationResult:
 
 def process_message(  # noqa: C901 — DEBT(nova-ci-2): exceeds Handbook §3.1 complexity 12
     transcript: str,
+    tool_handlers: ToolHandlers,
     conversation_id: Optional[str] = None,
     *,
     speak_output: bool = False,
     emit_events: bool = True,
 ) -> ConversationResult:
     """Route a transcript through Brain and persist side effects.
+
+    `tool_handlers` is injected by the caller (built via `build_tool_handlers()`)
+    rather than read from a module global — see that function's docstring.
 
     Returns a structured result for API callers; voice/REPL use process_transcript()
     which wraps this and handles terminal I/O.
@@ -147,13 +167,14 @@ def process_message(  # noqa: C901 — DEBT(nova-ci-2): exceeds Handbook §3.1 c
     if emit_events:
         publish("chat", "chat.routing", {"conversation_id": cid})
 
-    _tool_events.clear()
+    tool_events: list[tuple[str, dict, str]] = []
     try:
-        reply = brain.route(transcript, INSTRUMENTED_HANDLERS, brain.history.get())
+        instrumented = _instrumented(tool_handlers, tool_events)
+        reply = brain.route(transcript, instrumented, brain.history.get())
         brain.history.add_turn(transcript, reply)
 
         tools_called = [
-            {"name": name, "args": args, "result": result} for name, args, result in _tool_events
+            {"name": name, "args": args, "result": result} for name, args, result in tool_events
         ]
         if emit_events:
             for tool in tools_called:
@@ -211,6 +232,7 @@ def process_message(  # noqa: C901 — DEBT(nova-ci-2): exceeds Handbook §3.1 c
 
 def process_transcript(
     transcript: str,
+    tool_handlers: ToolHandlers,
     conversation_id: Optional[str] = None,
     speak_output: bool = True,
 ) -> None:
@@ -219,6 +241,7 @@ def process_transcript(
         print("Heard nothing — try speaking clearly.\n")
     result = process_message(
         transcript,
+        tool_handlers,
         conversation_id,
         speak_output=speak_output,
         emit_events=False,

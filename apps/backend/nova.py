@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 import identity
 from memory import init_db
 from paths import REPO_ROOT
-from runtime.conversation import process_transcript
+from runtime.conversation import build_tool_handlers, process_transcript
 from runtime.domain_events import publish_graph_updated
 from runtime.events import publish
 from services import brain, calendar, knowledge, planner, voice
@@ -49,6 +49,7 @@ class AssistantApp:
 
     def __init__(self) -> None:
         self.model = None
+        self.tool_handlers = build_tool_handlers()
         self.last_briefing_date: Optional[str] = None
         self.last_wrapup_date: Optional[str] = None
         self.announced_reminder_ids: set[int] = set()
@@ -131,11 +132,15 @@ class AssistantApp:
 
                 if heard:
                     conversation_id = str(uuid.uuid4())
-                    process_transcript(voice.record_command(self.model), conversation_id)
+                    process_transcript(
+                        voice.record_command(self.model), self.tool_handlers, conversation_id
+                    )
                     prev_hop = voice.new_listener_state()
 
                     while voice.wait_for_followup(self.model):
-                        process_transcript(voice.record_command(self.model), conversation_id)
+                        process_transcript(
+                            voice.record_command(self.model), self.tool_handlers, conversation_id
+                        )
                     brain.history.clear()
                     print("Going back to sleep.")
                     prev_hop = voice.new_listener_state()
@@ -150,6 +155,7 @@ def chat_mode() -> None:
     init_db()
     brain.set_calendar_source(calendar.get_events)
     _extract_entities_async()
+    tool_handlers = build_tool_handlers()
     conversation_id = str(uuid.uuid4())
     print(
         f"{identity.ASSISTANT_NAME} chat mode. Type a command (e.g. 'open chrome'), or 'quit' to exit.\n"
@@ -164,7 +170,7 @@ def chat_mode() -> None:
             break
         if not line:
             continue
-        process_transcript(line, conversation_id, speak_output=False)
+        process_transcript(line, tool_handlers, conversation_id, speak_output=False)
 
 
 def main() -> None:

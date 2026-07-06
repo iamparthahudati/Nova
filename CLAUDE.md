@@ -45,8 +45,12 @@ stop and ask, not to add the edge yourself.
 Known, documented deviations from the idealized spec (do not silently "fix"
 these — they are tracked debt, see the docstrings in
 `tests/architecture/test_dependencies.py`):
-- `runtime/conversation.py` builds `TOOL_HANDLERS` by importing services
-  directly, rather than receiving them via injection from `nova.py`.
+- `runtime/conversation.build_tool_handlers()` imports every service to build
+  the tool-name -> service-call map, because two independent entry points
+  (`nova.py`'s voice/REPL loop and `services/api/routers/chat.py`) both need
+  the identical mapping — deliberate shared-factory location, not an
+  accident. `process_message`/`process_transcript` do take `tool_handlers`
+  as an explicit parameter now (no hidden module-level global).
 - `services/api` issues writes directly (`finalize_mutations`) per
   `docs/architecture/DESKTOP_WRITE_OPERATIONS.md` — this supersedes the
   "read-only API" line in the v1 roadmap's Milestone 4 DoD.

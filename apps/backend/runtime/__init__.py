@@ -5,7 +5,13 @@ It owns the single conversation pipeline and lightweight event publishing for
 WebSocket push; it does not own business rules (those live in services).
 """
 
-from .conversation import process_message, process_transcript
+from .conversation import build_tool_handlers, process_message, process_transcript
 from .events import publish, subscribe
 
-__all__ = ["process_message", "process_transcript", "publish", "subscribe"]
+__all__ = [
+    "build_tool_handlers",
+    "process_message",
+    "process_transcript",
+    "publish",
+    "subscribe",
+]
