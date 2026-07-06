@@ -64,13 +64,15 @@ class RankingConfig:
     # Recency half-life per tier, in hours. Short-term memories are "recent"
     # only for hours; long-term memories decay over months. A memory aging past
     # its tier's half-life is a demotion candidate; one still fresh is safe.
-    half_life_hours: dict[str, float] = field(default_factory=lambda: {
-        SHORT_TERM: 12.0,        # half a day
-        MEDIUM_TERM: 24.0 * 7,   # one week
-        LONG_TERM: 24.0 * 90,    # ~three months
-        ARCHIVED: 24.0 * 365,    # a year (barely decays; it's already cold)
-        FORGOTTEN: 24.0 * 365,
-    })
+    half_life_hours: dict[str, float] = field(
+        default_factory=lambda: {
+            SHORT_TERM: 12.0,  # half a day
+            MEDIUM_TERM: 24.0 * 7,  # one week
+            LONG_TERM: 24.0 * 90,  # ~three months
+            ARCHIVED: 24.0 * 365,  # a year (barely decays; it's already cold)
+            FORGOTTEN: 24.0 * 365,
+        }
+    )
 
     # access_count is compressed with log1p and saturated at this many hits, so
     # the 2nd recall matters far more than the 200th (diminishing reinforcement).
@@ -94,22 +96,27 @@ class RankingConfig:
     w_life_access: float = 0.35
 
     # Tier thresholds on lifecycle_score ∈ [0, 1].
-    promote_threshold: float = 0.66   # ≥ → long_term
-    medium_threshold: float = 0.33    # ≥ → medium_term
-    archive_floor: float = 0.12       # ≥ → short_term; below → archived
-    forget_floor: float = 0.05        # archived & below → forgotten (soft delete)
+    promote_threshold: float = 0.66  # ≥ → long_term
+    medium_threshold: float = 0.33  # ≥ → medium_term
+    archive_floor: float = 0.12  # ≥ → short_term; below → archived
+    forget_floor: float = 0.05  # archived & below → forgotten (soft delete)
 
     # Soft-deleted memories survive at least this long before maintenance may
     # hard-purge them — the "recoverable until maintenance runs" guarantee.
     forget_retention_hours: float = 24.0 * 30  # 30 days
 
     def __post_init__(self) -> None:
-        q = self.w_query_similarity + self.w_query_importance + self.w_query_recency + self.w_query_access
-        l = self.w_life_importance + self.w_life_recency + self.w_life_access
+        q = (
+            self.w_query_similarity
+            + self.w_query_importance
+            + self.w_query_recency
+            + self.w_query_access
+        )
+        lifecycle_sum = self.w_life_importance + self.w_life_recency + self.w_life_access
         if abs(q - 1.0) > 1e-9:
             raise ValueError(f"query weights must sum to 1, got {q}")
-        if abs(l - 1.0) > 1e-9:
-            raise ValueError(f"lifecycle weights must sum to 1, got {l}")
+        if abs(lifecycle_sum - 1.0) > 1e-9:
+            raise ValueError(f"lifecycle weights must sum to 1, got {lifecycle_sum}")
 
 
 DEFAULT_CONFIG = RankingConfig()
@@ -126,8 +133,9 @@ def _parse_ts(ts: str | None) -> datetime | None:
     return dt if dt.tzinfo else dt.replace(tzinfo=timezone.utc)
 
 
-def recency_decay(reference_ts: str | None, tier: str, now: datetime,
-                  config: RankingConfig = DEFAULT_CONFIG) -> float:
+def recency_decay(
+    reference_ts: str | None, tier: str, now: datetime, config: RankingConfig = DEFAULT_CONFIG
+) -> float:
     """Exponential decay 0.5**(age / half_life). 1.0 = just now, →0 = ancient.
 
     `reference_ts` is the more recent of last_accessed_at / created_at (chosen by
@@ -176,7 +184,7 @@ def initial_importance(source_type: str, metadata: dict | None = None) -> float:
         "reflection": 0.65,
         "conversation": 0.45,
         "task": 0.40,
-        "screen": 0.35,   # Vision OCR (§6) — high volume, low per-item signal
+        "screen": 0.35,  # Vision OCR (§6) — high volume, low per-item signal
     }.get(source_type, 0.50)
 
     # A caller can nudge the prior via metadata without teaching this function
@@ -193,10 +201,16 @@ def initial_importance(source_type: str, metadata: dict | None = None) -> float:
 # ── Composite scores ─────────────────────────────────────────────────────────
 
 
-def composite_query_score(*, similarity: float, importance: float,
-                          reference_ts: str | None, tier: str,
-                          access_count: int, now: datetime,
-                          config: RankingConfig = DEFAULT_CONFIG) -> float:
+def composite_query_score(
+    *,
+    similarity: float,
+    importance: float,
+    reference_ts: str | None,
+    tier: str,
+    access_count: int,
+    now: datetime,
+    config: RankingConfig = DEFAULT_CONFIG,
+) -> float:
     """Recall-time rank. Blends similarity with the durable lifecycle signals."""
     return (
         config.w_query_similarity * _clamp01(similarity)
@@ -206,9 +220,15 @@ def composite_query_score(*, similarity: float, importance: float,
     )
 
 
-def lifecycle_score(*, importance: float, reference_ts: str | None, tier: str,
-                    access_count: int, now: datetime,
-                    config: RankingConfig = DEFAULT_CONFIG) -> float:
+def lifecycle_score(
+    *,
+    importance: float,
+    reference_ts: str | None,
+    tier: str,
+    access_count: int,
+    now: datetime,
+    config: RankingConfig = DEFAULT_CONFIG,
+) -> float:
     """Maintenance-time score (no query, no similarity). Drives tier transitions."""
     return (
         config.w_life_importance * _clamp01(importance)
@@ -217,8 +237,7 @@ def lifecycle_score(*, importance: float, reference_ts: str | None, tier: str,
     )
 
 
-def target_tier(*, current_tier: str, score: float,
-                config: RankingConfig = DEFAULT_CONFIG) -> str:
+def target_tier(*, current_tier: str, score: float, config: RankingConfig = DEFAULT_CONFIG) -> str:
     """Map a lifecycle score to the tier the memory *should* be in.
 
     Fully score-driven: there is no "after N accesses, promote" rule anywhere.

@@ -19,15 +19,15 @@ class RecentActivityProvider(ContextProvider):
         items: list[ContextItem] = []
 
         for p in get_recent_progress(5):
-            items.append(ContextItem(
-                text=p["note"],
-                meta={"group": "Recent progress"},
-            ))
+            items.append(
+                ContextItem(
+                    text=p["note"],
+                    meta={"group": "Recent progress"},
+                )
+            )
 
         for m in get_recent_money(5):
-            line = f"{m['type']} {m['amount']}" + (
-                f" ({m['note']})" if m.get("note") else ""
-            )
+            line = f"{m['type']} {m['amount']}" + (f" ({m['note']})" if m.get("note") else "")
             items.append(ContextItem(text=line, meta={"group": "Recent money entries"}))
 
         for p in get_products():

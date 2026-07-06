@@ -33,9 +33,7 @@ def get_latest_money(type_: str, amount: float) -> Optional[dict]:
 
 def get_recent_money(n: int = 10) -> list[dict]:
     with _connection.connect(rows=True) as con:
-        rows = con.execute(
-            "SELECT * FROM money ORDER BY created_at DESC LIMIT ?", (n,)
-        ).fetchall()
+        rows = con.execute("SELECT * FROM money ORDER BY created_at DESC LIMIT ?", (n,)).fetchall()
     return [dict(r) for r in rows]
 
 

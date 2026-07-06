@@ -94,8 +94,9 @@ def new_listener_state() -> np.ndarray:
 
 # ── Levels, gate, and gain ──────────────────────────────────────────────────
 
+
 def rms(chunk: np.ndarray) -> float:
-    return float(np.sqrt(np.mean(chunk ** 2)))
+    return float(np.sqrt(np.mean(chunk**2)))
 
 
 def _frame_rms(chunk: np.ndarray) -> np.ndarray:
@@ -103,7 +104,7 @@ def _frame_rms(chunk: np.ndarray) -> np.ndarray:
     if n == 0:
         return np.array([rms(chunk)])
     frames = chunk[:n].reshape(-1, _FRAME_SAMPLES)
-    return np.sqrt((frames ** 2).mean(axis=1))
+    return np.sqrt((frames**2).mean(axis=1))
 
 
 def peak_frame_rms(chunk: np.ndarray) -> float:
@@ -145,6 +146,7 @@ def normalize(chunk: np.ndarray) -> np.ndarray:
 
 
 # ── Endpointed recording ────────────────────────────────────────────────────
+
 
 def record_endpointed(preroll: np.ndarray | None = None) -> np.ndarray:
     """Record until the speaker stops talking.

@@ -13,7 +13,14 @@ def speak(text: str) -> None:
     if config.TTS_ENGINE == "piper" and config.PIPER_BINARY and config.PIPER_MODEL:
         try:
             result = subprocess.run(
-                [config.PIPER_BINARY, "--model", config.PIPER_MODEL, "--output-file", "/dev/stdout", "--quiet"],
+                [
+                    config.PIPER_BINARY,
+                    "--model",
+                    config.PIPER_MODEL,
+                    "--output-file",
+                    "/dev/stdout",
+                    "--quiet",
+                ],
                 input=text.encode(),
                 capture_output=True,
                 timeout=30,

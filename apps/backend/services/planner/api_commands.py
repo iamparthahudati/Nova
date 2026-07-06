@@ -52,7 +52,9 @@ class SpendingTypeInvalidError(ValueError):
         self.type_ = type_
 
 
-def create_reminder(text: str, remind_date: str, remind_time: Optional[str] = None) -> tuple[dict, str]:
+def create_reminder(
+    text: str, remind_date: str, remind_time: Optional[str] = None
+) -> tuple[dict, str]:
     date_obj = calendar.parse_date(remind_date)
     if date_obj is None:
         raise ReminderDateInvalidError(remind_date)

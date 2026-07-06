@@ -18,13 +18,15 @@ LANCEDB_PATH = _connection.LANCEDB_PATH
 
 
 def _schema(dimensions: int) -> pa.Schema:
-    return pa.schema([
-        pa.field("id", pa.string()),
-        pa.field("vector", pa.list_(pa.float32(), dimensions)),
-        pa.field("text", pa.string()),
-        pa.field("source_type", pa.string()),
-        pa.field("created_at", pa.string()),
-    ])
+    return pa.schema(
+        [
+            pa.field("id", pa.string()),
+            pa.field("vector", pa.list_(pa.float32(), dimensions)),
+            pa.field("text", pa.string()),
+            pa.field("source_type", pa.string()),
+            pa.field("created_at", pa.string()),
+        ]
+    )
 
 
 class VectorStore:
@@ -54,9 +56,7 @@ class VectorStore:
         # list_tables(): its return type has changed across lancedb releases
         # (list[str] → ListTablesResponse), which made `name in db.list_tables()`
         # silently False and every recall/remember die on "already exists".
-        self._table = db.create_table(
-            _TABLE_NAME, schema=_schema(self._dimensions), exist_ok=True
-        )
+        self._table = db.create_table(_TABLE_NAME, schema=_schema(self._dimensions), exist_ok=True)
         return self._table
 
     def add(self, rows: list[dict]) -> None:

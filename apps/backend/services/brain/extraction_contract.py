@@ -69,18 +69,41 @@ from identity import ASSISTANT_NAME
 # ARCHITECTURE_v2 §4's nine canonical noun types + three additive ones (see
 # module docstring). Extending this set is a contract change: update the
 # prompt's type list in extraction.py in the same commit.
-ENTITY_TYPES = frozenset({
-    "person", "project", "task", "goal", "habit", "meeting", "document",
-    "conversation", "product", "organization", "place", "topic",
-})
+ENTITY_TYPES = frozenset(
+    {
+        "person",
+        "project",
+        "task",
+        "goal",
+        "habit",
+        "meeting",
+        "document",
+        "conversation",
+        "product",
+        "organization",
+        "place",
+        "topic",
+    }
+)
 
 # Names that can never be an entity: the owner, the assistant, and bare
 # pronouns/generics that survive careless extraction. Compared case-folded
 # against the canonicalized name.
-FORBIDDEN_NAMES = frozenset({
-    "user", "the user", "owner", "me", "myself", "i", "you",
-    "assistant", "the assistant", ASSISTANT_NAME.lower(), "rai",
-})
+FORBIDDEN_NAMES = frozenset(
+    {
+        "user",
+        "the user",
+        "owner",
+        "me",
+        "myself",
+        "i",
+        "you",
+        "assistant",
+        "the assistant",
+        ASSISTANT_NAME.lower(),
+        "rai",
+    }
+)
 
 # Ceilings, not targets — a memory is one or two sentences; hitting these
 # means Claude is inventing. Overflow is truncated, not fatal.
@@ -102,8 +125,8 @@ class ExtractionParseError(ValueError):
 
 @dataclass(frozen=True)
 class ExtractedEntity:
-    type: str                       # canonical, member of ENTITY_TYPES
-    name: str                       # whitespace-collapsed display name
+    type: str  # canonical, member of ENTITY_TYPES
+    name: str  # whitespace-collapsed display name
     attributes: dict = field(default_factory=dict)
 
     @property
@@ -116,13 +139,14 @@ class ExtractedEntity:
 @dataclass(frozen=True)
 class ExtractedRelationship:
     from_identity: tuple[str, str]  # ExtractedEntity.identity of the source
-    to_identity: tuple[str, str]    # ExtractedEntity.identity of the target
-    relation: str                   # canonical UPPER_SNAKE verb
+    to_identity: tuple[str, str]  # ExtractedEntity.identity of the target
+    relation: str  # canonical UPPER_SNAKE verb
 
 
 @dataclass(frozen=True)
 class MemoryExtraction:
     """Everything Claude found in one memory, validated and canonicalized."""
+
     key: str
     entities: tuple[ExtractedEntity, ...]
     relationships: tuple[ExtractedRelationship, ...]
@@ -161,7 +185,7 @@ def _strip_to_json(raw: str) -> dict:
         if start == -1 or end <= start:
             raise ExtractionParseError("response contains no JSON object")
         try:
-            data = json.loads(text[start:end + 1])
+            data = json.loads(text[start : end + 1])
         except json.JSONDecodeError as exc:
             raise ExtractionParseError(f"unparseable JSON: {exc}") from exc
     if not isinstance(data, dict):
@@ -230,14 +254,18 @@ def _parse_relationships(raw, declared: set[tuple[str, str]]) -> list[ExtractedR
         relation = _canonical_relation(item.get("relation"))
         if not _RELATION_RE.match(relation) or len(relation) > MAX_RELATION_CHARS:
             continue
-        from_identity = (_canonical_type(item.get("from_type")),
-                         _canonical_name(item.get("from_name")).casefold())
-        to_identity = (_canonical_type(item.get("to_type")),
-                       _canonical_name(item.get("to_name")).casefold())
+        from_identity = (
+            _canonical_type(item.get("from_type")),
+            _canonical_name(item.get("from_name")).casefold(),
+        )
+        to_identity = (
+            _canonical_type(item.get("to_type")),
+            _canonical_name(item.get("to_name")).casefold(),
+        )
         if from_identity not in declared or to_identity not in declared:
-            continue                      # endpoint not declared in this memory
+            continue  # endpoint not declared in this memory
         if from_identity == to_identity:
-            continue                      # self-link (possibly via case-folding)
+            continue  # self-link (possibly via case-folding)
         triple = (from_identity, to_identity, relation)
         if triple in seen:
             continue
@@ -268,7 +296,7 @@ def parse_extraction(raw: str, expected_keys: list[str]) -> dict[str, MemoryExtr
         if not isinstance(item, dict):
             continue
         key = item.get("key")
-        if key not in expected or key in parsed:   # unknown or duplicate key
+        if key not in expected or key in parsed:  # unknown or duplicate key
             continue
         entities = _parse_entities(item.get("entities"))
         relationships = _parse_relationships(

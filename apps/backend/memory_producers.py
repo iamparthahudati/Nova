@@ -35,7 +35,7 @@ def _record(
     return record
 
 
-def memory_from_mutation(
+def memory_from_mutation(  # noqa: C901 — DEBT(nova-ci-2): exceeds Handbook §3.1 complexity 12
     event: MutationEvent,
     now: Optional[datetime] = None,
 ) -> Optional[dict]:
@@ -150,9 +150,9 @@ def memories_from_events(
     """Deprecated — prefer memories_from_mutations via mutation_chat translator."""
     from runtime.mutation_chat import tool_calls_to_mutations
 
-    return memories_from_mutations(tool_calls_to_mutations(
-        [{"name": n, "args": a, "result": r} for n, a, r in events]
-    ), now)
+    return memories_from_mutations(
+        tool_calls_to_mutations([{"name": n, "args": a, "result": r} for n, a, r in events]), now
+    )
 
 
 def memory_from_pomodoro(minutes: int, now: Optional[datetime] = None) -> dict:

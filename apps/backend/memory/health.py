@@ -1,7 +1,5 @@
 """Public health probes — the only Memory surface for connectivity checks."""
 
-import sqlite3
-
 from . import _connection
 
 

@@ -18,15 +18,15 @@ and never happens here.
 
 from .service import (
     create_entity,
-    get_entity,
-    find_entity,
-    delete_entity,
-    link_entities,
-    entity_edges,
     delete_edge,
-    related_entities,
-    list_graph_snapshot,
+    delete_entity,
+    entity_edges,
+    find_entity,
+    get_entity,
     graph_stats,
+    link_entities,
+    list_graph_snapshot,
+    related_entities,
 )
 
 __all__ = [

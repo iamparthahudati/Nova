@@ -13,7 +13,6 @@ from fastapi.testclient import TestClient
 import memory
 from memory import _connection
 from memory.schema import init_db
-from runtime.domain_events import publish_mutation_events
 from runtime.events import subscribe
 from runtime.mutation_builders import build_reminder_created, build_spending_logged
 from runtime.mutation_chat import tool_calls_to_mutations
@@ -49,17 +48,19 @@ class GateCMutationParityTests(unittest.TestCase):
         assert row is not None
 
         rest_event = build_reminder_created(row)
-        chat_events = tool_calls_to_mutations([
-            {
-                "name": "add_reminder",
-                "args": {
-                    "text": "Pay rent",
-                    "remind_date": "2026-07-15",
-                    "remind_time": "09:00",
+        chat_events = tool_calls_to_mutations(
+            [
+                {
+                    "name": "add_reminder",
+                    "args": {
+                        "text": "Pay rent",
+                        "remind_date": "2026-07-15",
+                        "remind_time": "09:00",
+                    },
+                    "result": "Reminder saved: Pay rent on July 15 at 9:00 AM.",
                 },
-                "result": "Reminder saved: Pay rent on July 15 at 9:00 AM.",
-            },
-        ])
+            ]
+        )
         self.assertEqual(len(chat_events), 1)
         chat_event = chat_events[0]
 
@@ -74,13 +75,15 @@ class GateCMutationParityTests(unittest.TestCase):
         assert row is not None
 
         rest_event = build_spending_logged(row)
-        chat_events = tool_calls_to_mutations([
-            {
-                "name": "add_money",
-                "args": {"type": "spent", "amount": 42.5, "note": "Lunch"},
-                "result": "Logged expense.",
-            },
-        ])
+        chat_events = tool_calls_to_mutations(
+            [
+                {
+                    "name": "add_money",
+                    "args": {"type": "spent", "amount": 42.5, "note": "Lunch"},
+                    "result": "Logged expense.",
+                },
+            ]
+        )
         self.assertEqual(len(chat_events), 1)
         chat_event = chat_events[0]
 
@@ -98,22 +101,24 @@ class GateCMutationParityTests(unittest.TestCase):
 
         subscribe(handler)
 
-        finalize_mutations([
-            MutationEvent(
-                event_type="reminder.created",
-                entity_type="reminder",
-                operation="create",
-                entity={"id": 1, "text": "Call mom"},
-                metadata={"entity_id": 1},
-            ),
-            MutationEvent(
-                event_type="spending.logged",
-                entity_type="money",
-                operation="log",
-                entity={"id": 2, "type": "earned", "amount": 100.0},
-                metadata={"entity_id": 2},
-            ),
-        ])
+        finalize_mutations(
+            [
+                MutationEvent(
+                    event_type="reminder.created",
+                    entity_type="reminder",
+                    operation="create",
+                    entity={"id": 1, "text": "Call mom"},
+                    metadata={"entity_id": 1},
+                ),
+                MutationEvent(
+                    event_type="spending.logged",
+                    entity_type="money",
+                    operation="log",
+                    entity={"id": 2, "type": "earned", "amount": 100.0},
+                    metadata={"entity_id": 2},
+                ),
+            ]
+        )
         self.assertEqual(received, ["reminder.created", "spending.logged"])
 
 

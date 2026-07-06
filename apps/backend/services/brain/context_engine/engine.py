@@ -33,8 +33,13 @@ from typing import Optional, Sequence
 
 from ..prompts import format_system_prompt
 from .base import (
-    AssembledContext, ContextItem, ContextProvider, ContextRequest,
-    MessagesProvider, Section, estimate_tokens,
+    AssembledContext,
+    ContextItem,
+    ContextProvider,
+    ContextRequest,
+    MessagesProvider,
+    Section,
+    estimate_tokens,
 )
 
 # Who owns a fact that several providers surfaced. Structured, authoritative
@@ -72,9 +77,9 @@ class ContextEngine:
         dedup_order: Sequence[str] = DEDUP_ORDER,
         trim_order: Sequence[str] = TRIM_ORDER,
     ) -> None:
-        self.providers = list(providers)        # list order == render order
-        self.conversation = conversation        # messages channel, not a section
-        self.total_budget = total_budget        # 0 = no global ceiling
+        self.providers = list(providers)  # list order == render order
+        self.conversation = conversation  # messages channel, not a section
+        self.total_budget = total_budget  # 0 = no global ceiling
         self.dedup_order = list(dedup_order)
         self.trim_order = list(trim_order)
 
@@ -86,7 +91,7 @@ class ContextEngine:
         for provider in self.providers:
             try:
                 collected[provider.name] = list(provider.collect(request))
-            except Exception as exc:   # isolate: one bad source ≠ a bad turn
+            except Exception as exc:  # isolate: one bad source ≠ a bad turn
                 print(f"[context-engine] {provider.name} failed, section omitted: {exc}")
                 collected[provider.name] = []
                 failures.append(provider.name)
@@ -106,9 +111,10 @@ class ContextEngine:
                 kept.append(item)
             collected[name] = kept
 
-    def _budget_section(self, provider: ContextProvider,
-                        items: list[ContextItem]) -> list[ContextItem]:
-        ordered = sorted(items, key=lambda i: -i.score)   # stable: ties keep order
+    def _budget_section(
+        self, provider: ContextProvider, items: list[ContextItem]
+    ) -> list[ContextItem]:
+        ordered = sorted(items, key=lambda i: -i.score)  # stable: ties keep order
         kept: list[ContextItem] = []
         used = 0
         for item in ordered:
@@ -126,7 +132,8 @@ class ContextEngine:
         def total() -> int:
             return sum(
                 estimate_tokens(s.title) + estimate_tokens(s.rendered())
-                for s in sections if s.include
+                for s in sections
+                if s.include
             )
 
         by_name = {s.name: s for s in sections}
@@ -135,7 +142,7 @@ class ContextEngine:
             if section is None:
                 continue
             while section.items and total() > self.total_budget:
-                section.items.pop()   # cheapest-signal tail first
+                section.items.pop()  # cheapest-signal tail first
             if total() <= self.total_budget:
                 return
 
@@ -179,8 +186,10 @@ class ContextEngine:
 
         memories = [
             item.meta["memory"]
-            for section in sections if section.name == "semantic_memory"
-            for item in section.items if "memory" in item.meta
+            for section in sections
+            if section.name == "semantic_memory"
+            for item in section.items
+            if "memory" in item.meta
         ]
 
         return AssembledContext(

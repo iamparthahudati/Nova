@@ -12,10 +12,10 @@ notifications.
 Callers (nova.py) consume only the names below.
 """
 
-from .commands import COMMANDS, match_command, run_command, open_app
-from .whatsapp import send_whatsapp_message
+from .commands import COMMANDS, match_command, open_app, run_command
 from .notifications import notify
 from .pomodoro import start_pomodoro
+from .whatsapp import send_whatsapp_message
 
 __all__ = [
     "COMMANDS",

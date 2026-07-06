@@ -13,8 +13,8 @@ from .audio import (
     speech_gate,
     update_noise_floor,
 )
-from .tts import speak
 from .transcription import transcribe
+from .tts import speak
 from .wake_word import play_wake_cue, wake_match
 
 # Audio captured by wait_for_followup at the moment speech was detected.
@@ -57,7 +57,7 @@ def poll_wake_word(model: WhisperModel, prev_hop: np.ndarray) -> tuple[bool, np.
     text = transcribe(model, normalize(window), wake=True)
     if not text:
         return False, new_hop
-    print(f"[peak {level:.4f}] Heard: \"{text}\"")
+    print(f'[peak {level:.4f}] Heard: "{text}"')
 
     reason = wake_match(text)
     if reason:

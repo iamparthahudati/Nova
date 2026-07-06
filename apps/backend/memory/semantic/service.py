@@ -32,22 +32,22 @@ from typing import Optional
 
 from . import ledger, lifecycle, ranking
 from .embedding_provider import get_default_provider
-from .vector_store import VectorStore
 
 # Re-export the SQLite-only lifecycle verbs verbatim: they need no vector work,
 # so there's nothing for service.py to coordinate — but they belong to Memory's
 # single public surface, so they flow out through here.
 from .lifecycle import (  # noqa: F401  (re-exported, not used locally)
-    promote_memory,
-    demote_memory,
     archive_memory,
+    demote_memory,
+    evaluate_memory,
     forget_memory,
+    promote_memory,
+    recalculate_scores,
+    record_access,
     restore_memory,
     touch_memory,
-    record_access,
-    evaluate_memory,
-    recalculate_scores,
 )
+from .vector_store import VectorStore
 
 _store: Optional[VectorStore] = None
 
@@ -118,22 +118,30 @@ def remember(
         importance = ranking.initial_importance(source_type, metadata)
 
     created_at = ledger.insert(
-        memory_id, text, source_type, source_id, metadata or {},
+        memory_id,
+        text,
+        source_type,
+        source_id,
+        metadata or {},
         content_hash=content_hash,
         importance=importance,
-        tier=ranking.SHORT_TERM,          # every memory is born short-term; §3
+        tier=ranking.SHORT_TERM,  # every memory is born short-term; §3
         embedding_model=provider.name,
         embedding_version=provider.version,
         embedding_dimension=provider.dimensions,
         supersedes_id=supersedes_id,
     )
-    _get_store().add([{
-        "id": memory_id,
-        "vector": vector,
-        "text": text,
-        "source_type": source_type,
-        "created_at": created_at,
-    }])
+    _get_store().add(
+        [
+            {
+                "id": memory_id,
+                "vector": vector,
+                "text": text,
+                "source_type": source_type,
+                "created_at": created_at,
+            }
+        ]
+    )
 
     # Supersession moves the old memory toward archived rather than overwriting
     # it — history is preserved and walkable via the supersedes_id chain (§2).
@@ -203,17 +211,17 @@ def recall(
     hits = _get_store().search(vector, fetch, source_type)
 
     ledger_rows = ledger.get_by_ids([h["id"] for h in hits])
-    allowed = ranking.ACTIVE_TIERS if not include_archived else (
-        *ranking.ACTIVE_TIERS, ranking.ARCHIVED
+    allowed = (
+        ranking.ACTIVE_TIERS if not include_archived else (*ranking.ACTIVE_TIERS, ranking.ARCHIVED)
     )
 
     scored = []
     for hit in hits:
         row = ledger_rows.get(hit["id"])
         if row is None:
-            continue                          # vector with no ledger row (shouldn't happen)
+            continue  # vector with no ledger row (shouldn't happen)
         if row["deleted_at"] is not None:
-            continue                          # soft-deleted: invisible to recall
+            continue  # soft-deleted: invisible to recall
         if row["tier"] not in allowed:
             continue
         similarity = ranking.similarity_from_distance(hit["score"])
@@ -227,19 +235,21 @@ def recall(
             now=now,
             config=config,
         )
-        scored.append({
-            "id": row["id"],
-            "text": row["text"],
-            "source_type": row["source_type"],
-            "source_id": row["source_id"],
-            "metadata": json.loads(row["metadata"] or "{}"),
-            "tier": row["tier"],
-            "importance": row["importance"],
-            "access_count": row["access_count"],
-            "created_at": row["created_at"],
-            "similarity": round(similarity, 4),
-            "score": round(composite, 4),
-        })
+        scored.append(
+            {
+                "id": row["id"],
+                "text": row["text"],
+                "source_type": row["source_type"],
+                "source_id": row["source_id"],
+                "metadata": json.loads(row["metadata"] or "{}"),
+                "tier": row["tier"],
+                "importance": row["importance"],
+                "access_count": row["access_count"],
+                "created_at": row["created_at"],
+                "similarity": round(similarity, 4),
+                "score": round(composite, 4),
+            }
+        )
 
     scored.sort(key=lambda r: r["score"], reverse=True)
     return scored[:k]
@@ -322,8 +332,7 @@ def maintenance(
 # so these delegate straight to the ledger.
 
 
-def memories_pending_entity_extraction(limit: int = 10,
-                                       max_attempts: int = 3) -> list[dict]:
+def memories_pending_entity_extraction(limit: int = 10, max_attempts: int = 3) -> list[dict]:
     """Oldest active memories Brain has not yet entity-extracted.
 
     Each row carries id, text, source_type, created_at — everything the
@@ -377,7 +386,5 @@ def rebuild_index() -> int:
     ]
     written = _get_store().rebuild(payload)
     for row in rows:
-        ledger.set_embedding_meta(
-            row["id"], provider.name, provider.version, provider.dimensions
-        )
+        ledger.set_embedding_meta(row["id"], provider.name, provider.version, provider.dimensions)
     return written

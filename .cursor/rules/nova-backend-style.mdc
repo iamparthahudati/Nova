@@ -1,0 +1,33 @@
+---
+description: Nova backend naming, size limits, and error-handling standards
+globs: apps/backend/**/*.py
+alwaysApply: false
+---
+
+# Style (Handbook §2, §3, §6 — Appendix A is the one-page summary)
+
+**Verbs**: `get_`/`list_` never write. `build_`/`compute_` are pure, no I/O.
+`add_`/`create_`/`log_`/`save_` persist. `complete_`/`ship_` are domain state
+transitions. Match the existing verb for the operation — don't invent a new
+one.
+
+**Size (hard limits, checked by `scripts/dev/check_limits.py` + flake8
+`max-complexity`)**: file ≤ 500 lines, function ≤ 75 lines, nesting ≤ 4,
+params ≤ 6, ≤ 1 boolean param, cyclomatic complexity ≤ 12. If you're about to
+exceed one, split by responsibility — don't add a `# noqa` to hide new debt
+(existing `# noqa: C901 — DEBT(nova-ci-2)` markers are pre-existing debt only,
+not a precedent for new code).
+
+**Errors**: `except: pass` is banned. Catch the specific exception you can
+handle (e.g. `sqlite3.OperationalError`, not `Exception`) unless you are the
+top-of-turn boundary whose job is "never let the turn die." Never swallow an
+exception silently outside a background daemon thread, and even there, log it.
+
+**Determinism**: inject `now: datetime` as a parameter; never call
+`datetime.now()` inside pure logic. Non-determinism (Claude, network, clock,
+RNG) lives at the effect edge, not inside a `build_`/`compute_` function.
+
+**SQL**: always parameterized. Never build a query with an f-string.
+
+**Tests**: never mock the database — use a real temp SQLite (`tmp_path`
+fixture). Mock only true boundaries (Claude, external HTTP, audio hardware).

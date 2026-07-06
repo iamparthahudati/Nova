@@ -1,7 +1,7 @@
 """Pydantic API schemas — canonical HTTP contracts."""
 
-from .chat import ChatRequest, ChatResponse, ToolCallRecord
 from .calendar import CalendarEventResponse, CalendarResponse
+from .chat import ChatRequest, ChatResponse, ToolCallRecord
 from .common import HealthResponse, MutationMeta, OkResponse
 from .graph import (
     GraphEdgeResponse,
@@ -11,8 +11,8 @@ from .graph import (
     GraphStatsResponse,
 )
 from .home import HomeCard, HomePanel, HomePanelItem, HomeResponse
-from .memory import MemoryRecallResponse, MemoryResponse
 from .memories import MemoriesListResponse, MemoriesStatsResponse
+from .memory import MemoryRecallResponse, MemoryResponse
 from .products import ProductResponse, ProductsResponse
 from .reminders import (
     CreateReminderRequest,

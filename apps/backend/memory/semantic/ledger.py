@@ -56,9 +56,21 @@ def insert(
                 deleted_at, embedding_model, embedding_version, embedding_dimension,
                 created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, NULL, ?, NULL, ?, ?, ?, ?)""",
-            (memory_id, text, source_type, source_id, json.dumps(metadata),
-             content_hash, tier, importance, supersedes_id,
-             embedding_model, embedding_version, embedding_dimension, created_at),
+            (
+                memory_id,
+                text,
+                source_type,
+                source_id,
+                json.dumps(metadata),
+                content_hash,
+                tier,
+                importance,
+                supersedes_id,
+                embedding_model,
+                embedding_version,
+                embedding_dimension,
+                created_at,
+            ),
         )
     return created_at
 
@@ -77,9 +89,7 @@ def get_by_ids(ids: list[str]) -> dict[str, dict]:
         return {}
     placeholders = ",".join("?" for _ in ids)
     with _connection.connect(rows=True) as con:
-        rows = con.execute(
-            f"SELECT * FROM memories WHERE id IN ({placeholders})", ids
-        ).fetchall()
+        rows = con.execute(f"SELECT * FROM memories WHERE id IN ({placeholders})", ids).fetchall()
     return {r["id"]: dict(r) for r in rows}
 
 
@@ -134,8 +144,7 @@ def list_active(
     order_dir = "DESC" if order.lower() == "desc" else "ASC"
     where = " AND ".join(conditions)
     query = (
-        f"SELECT * FROM memories WHERE {where} "
-        f"ORDER BY {sort_col} {order_dir} LIMIT ? OFFSET ?"
+        f"SELECT * FROM memories WHERE {where} " f"ORDER BY {sort_col} {order_dir} LIMIT ? OFFSET ?"
     )
     params.extend([limit, offset])
 
@@ -165,19 +174,15 @@ def count_active(
 
     where = " AND ".join(conditions)
     with _connection.connect() as con:
-        row = con.execute(
-            f"SELECT COUNT(*) FROM memories WHERE {where}", params
-        ).fetchone()
+        row = con.execute(f"SELECT COUNT(*) FROM memories WHERE {where}", params).fetchone()
     return int(row[0])
 
 
 def count_active_by_tier() -> dict[str, int]:
     """Active memory counts grouped by tier."""
     with _connection.connect(rows=True) as con:
-        rows = con.execute(
-            """SELECT tier, COUNT(*) AS n FROM memories
-               WHERE deleted_at IS NULL GROUP BY tier ORDER BY tier"""
-        ).fetchall()
+        rows = con.execute("""SELECT tier, COUNT(*) AS n FROM memories
+               WHERE deleted_at IS NULL GROUP BY tier ORDER BY tier""").fetchall()
     return {r["tier"]: r["n"] for r in rows}
 
 
@@ -277,8 +282,7 @@ def hard_delete(ids: list[str]) -> None:
 # ── Entity-extraction state (2.7; policy decided by Brain's sweep) ───────────
 
 
-def pending_extraction(limit: int, max_attempts: int,
-                       tiers: tuple[str, ...]) -> list[dict]:
+def pending_extraction(limit: int, max_attempts: int, tiers: tuple[str, ...]) -> list[dict]:
     """Oldest live rows not yet entity-extracted and not retried out.
 
     Only rows in `tiers` (the caller passes the active tiers) are eligible:

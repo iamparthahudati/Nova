@@ -23,13 +23,14 @@ from paths import REPO_ROOT
 from runtime.conversation import process_transcript
 from runtime.domain_events import publish_graph_updated
 from runtime.events import publish
-from services import automation, brain, calendar, knowledge, planner, voice
+from services import brain, calendar, knowledge, planner, voice
 
 load_dotenv(REPO_ROOT / ".env")  # reads repo-root .env into os.environ at startup
 
 
 def _extract_entities_async() -> None:
     """Kick Brain's entity-extraction sweep on a background thread (§2.7)."""
+
     def sweep():
         try:
             result = brain.run_entity_extraction()
@@ -39,6 +40,7 @@ def _extract_entities_async() -> None:
                 publish_graph_updated(reason="entity_extraction")
         except Exception as exc:
             print(f"[extraction] skipped: {exc}")
+
     threading.Thread(target=sweep, daemon=True).start()
 
 
@@ -89,9 +91,11 @@ class AssistantApp:
             voice.speak(briefing)
             self.last_briefing_date = today_str
 
-        if (planner.EVENING_WRAPUP_TIME
-                and time_str == planner.EVENING_WRAPUP_TIME
-                and self.last_wrapup_date != today_str):
+        if (
+            planner.EVENING_WRAPUP_TIME
+            and time_str == planner.EVENING_WRAPUP_TIME
+            and self.last_wrapup_date != today_str
+        ):
             wrapup = planner.build_evening_wrapup()
             print(f"\nEvening wrap-up: {wrapup}\n")
             voice.speak(wrapup)
@@ -107,10 +111,14 @@ class AssistantApp:
             announcement = f"Reminder: {reminder['text']}"
             print(f"\n{announcement}\n")
             voice.speak(announcement)
-            publish("events", "reminder.triggered", {
-                "id": reminder["id"],
-                "text": reminder["text"],
-            })
+            publish(
+                "events",
+                "reminder.triggered",
+                {
+                    "id": reminder["id"],
+                    "text": reminder["text"],
+                },
+            )
 
     def _run_loop(self) -> None:
         prev_hop = voice.new_listener_state()
@@ -143,7 +151,9 @@ def chat_mode() -> None:
     brain.set_calendar_source(calendar.get_events)
     _extract_entities_async()
     conversation_id = str(uuid.uuid4())
-    print(f"{identity.ASSISTANT_NAME} chat mode. Type a command (e.g. 'open chrome'), or 'quit' to exit.\n")
+    print(
+        f"{identity.ASSISTANT_NAME} chat mode. Type a command (e.g. 'open chrome'), or 'quit' to exit.\n"
+    )
     while True:
         try:
             line = input("> ").strip().lower()

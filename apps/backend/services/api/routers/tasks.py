@@ -1,12 +1,23 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+import memory
 from runtime.mutation_builders import build_task_completed, build_task_created
 from runtime.side_effects import finalize_mutations
-from services.planner.api_commands import TaskNotFoundError, TaskNotOpenError, complete_task_by_id, create_task
+from services.planner.api_commands import (
+    TaskNotFoundError,
+    TaskNotOpenError,
+    complete_task_by_id,
+    create_task,
+)
 
 from ..dependencies import RequestContext, get_request_context
-from ..schemas import CreateTaskRequest, MutationMeta, TaskMutationResponse, TaskResponse, TasksResponse
-import memory
+from ..schemas import (
+    CreateTaskRequest,
+    MutationMeta,
+    TaskMutationResponse,
+    TaskResponse,
+    TasksResponse,
+)
 
 router = APIRouter(prefix="/tasks", tags=["tasks"])
 

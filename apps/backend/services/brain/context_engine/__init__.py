@@ -22,8 +22,12 @@ from typing import Optional
 
 from ..config import CONTEXT_TOTAL_TOKEN_BUDGET
 from .base import (
-    AssembledContext, ContextItem, ContextProvider, ContextRequest,
-    MessagesProvider, Section,
+    AssembledContext,
+    ContextItem,
+    ContextProvider,
+    ContextRequest,
+    MessagesProvider,
+    Section,
 )
 from .engine import ContextEngine
 from .providers import (

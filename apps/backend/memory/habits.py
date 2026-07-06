@@ -46,7 +46,5 @@ def get_habits_today() -> list[dict]:
 
 def get_recent_habits(n: int = 5) -> list[dict]:
     with _connection.connect(rows=True) as con:
-        rows = con.execute(
-            "SELECT * FROM habits ORDER BY created_at DESC LIMIT ?", (n,)
-        ).fetchall()
+        rows = con.execute("SELECT * FROM habits ORDER BY created_at DESC LIMIT ?", (n,)).fetchall()
     return [dict(r) for r in rows]

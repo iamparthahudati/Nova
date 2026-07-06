@@ -38,35 +38,104 @@ MIN_WORDS_ASSISTANT = 6
 # Name-addressed variants ("hi nova") are derived from the configured identity
 # so they survive any future rename; "rai" spellings kept for old transcripts.
 _NAME_VARIANTS = (ASSISTANT_NAME.lower(), "rai")
-_GREETINGS = frozenset({
-    "hi", "hii", "hey", "yo", "sup", "hello", "hello there",
-    "good morning", "good afternoon", "good evening", "good night",
-    "morning", "evening", "night", "thanks", "thank you",
-    "thx", "ty", "ok", "okay", "k", "cool", "nice", "great",
-    "awesome", "bye", "goodbye", "see you", "see ya", "later", "how are you",
-    "how's it going", "hows it going", "what's up", "whats up", "test", "testing",
-} | {
-    f"{greeting} {name}"
-    for name in _NAME_VARIANTS
-    for greeting in ("hi", "hey", "hello", "thanks", "thank you")
-})
+_GREETINGS = frozenset(
+    {
+        "hi",
+        "hii",
+        "hey",
+        "yo",
+        "sup",
+        "hello",
+        "hello there",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "good night",
+        "morning",
+        "evening",
+        "night",
+        "thanks",
+        "thank you",
+        "thx",
+        "ty",
+        "ok",
+        "okay",
+        "k",
+        "cool",
+        "nice",
+        "great",
+        "awesome",
+        "bye",
+        "goodbye",
+        "see you",
+        "see ya",
+        "later",
+        "how are you",
+        "how's it going",
+        "hows it going",
+        "what's up",
+        "whats up",
+        "test",
+        "testing",
+    }
+    | {
+        f"{greeting} {name}"
+        for name in _NAME_VARIANTS
+        for greeting in ("hi", "hey", "hello", "thanks", "thank you")
+    }
+)
 
 # User utterances that are *commands* (already captured as structured rows by the
 # tool that handles them) — storing them again as "conversation" is redundant
 # noise. Prefix match on the normalised text. NB: "remember …" is deliberately
 # absent — "remember my sister is allergic to peanuts" IS the fact to keep.
 _USER_COMMAND_PREFIXES = (
-    "log ", "add ", "open ", "launch ", "start ", "stop ", "play ", "pause ",
-    "send ", "text ", "message ", "whatsapp ", "remind me", "set a reminder",
-    "delete ", "remove ", "mark ", "complete ", "task done", "create event",
-    "add event", "ship ", "sold ", "read my day", "what's my day",
+    "log ",
+    "add ",
+    "open ",
+    "launch ",
+    "start ",
+    "stop ",
+    "play ",
+    "pause ",
+    "send ",
+    "text ",
+    "message ",
+    "whatsapp ",
+    "remind me",
+    "set a reminder",
+    "delete ",
+    "remove ",
+    "mark ",
+    "complete ",
+    "task done",
+    "create event",
+    "add event",
+    "ship ",
+    "sold ",
+    "read my day",
+    "what's my day",
 )
 
 # Longer assistant acks that clear the word floor but carry no memory value.
 _ASSISTANT_ACK_PREFIXES = (
-    "sure", "okay", "ok ", "got it", "no problem", "of course", "will do",
-    "noted", "happy to", "you're welcome", "youre welcome", "done",
-    "task ", "logged ", "reminder ", "progress ", "no matching",
+    "sure",
+    "okay",
+    "ok ",
+    "got it",
+    "no problem",
+    "of course",
+    "will do",
+    "noted",
+    "happy to",
+    "you're welcome",
+    "youre welcome",
+    "done",
+    "task ",
+    "logged ",
+    "reminder ",
+    "progress ",
+    "no matching",
 )
 
 _WS = re.compile(r"\s+")

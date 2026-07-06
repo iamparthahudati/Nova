@@ -6,8 +6,13 @@ import urllib.request
 from datetime import datetime, timedelta, timezone
 
 from memory import (
-    get_recent_open_tasks, get_done_tasks_since, get_money_since, get_progress_since,
-    get_profile_observations, get_last_profile_update, replace_profile_observations,
+    get_done_tasks_since,
+    get_last_profile_update,
+    get_money_since,
+    get_profile_observations,
+    get_progress_since,
+    get_recent_open_tasks,
+    replace_profile_observations,
 )
 
 from .config import ANTHROPIC_API_URL, CLAUDE_API_KEY, CLAUDE_MODEL
@@ -33,21 +38,27 @@ def run_reflection_job() -> str:
     prog_rows = get_progress_since(cutoff, 20)
 
     existing = get_profile_observations()
-    existing_text = "\n".join(
-        f"- [{o['category']}] {o['observation']} (confidence {o['confidence']:.1f})"
-        for o in existing
-    ) or "None yet."
+    existing_text = (
+        "\n".join(
+            f"- [{o['category']}] {o['observation']} (confidence {o['confidence']:.1f})"
+            for o in existing
+        )
+        or "None yet."
+    )
 
-    open_text  = "\n".join(
-        f"- {r['text']}" + (f" (due {r['due']})" if r['due'] else "")
-        for r in open_tasks
-    ) or "None"
-    done_text  = "\n".join(f"- {r['text']}" for r in done_tasks) or "None"
-    money_text = "\n".join(
-        f"- {r['type']} {r['amount']}" + (f" ({r['note']})" if r['note'] else "")
-        for r in money_rows
-    ) or "None"
-    prog_text  = "\n".join(f"- {r['note']}" for r in prog_rows) or "None"
+    open_text = (
+        "\n".join(f"- {r['text']}" + (f" (due {r['due']})" if r["due"] else "") for r in open_tasks)
+        or "None"
+    )
+    done_text = "\n".join(f"- {r['text']}" for r in done_tasks) or "None"
+    money_text = (
+        "\n".join(
+            f"- {r['type']} {r['amount']}" + (f" ({r['note']})" if r["note"] else "")
+            for r in money_rows
+        )
+        or "None"
+    )
+    prog_text = "\n".join(f"- {r['note']}" for r in prog_rows) or "None"
 
     prompt = (
         "You are analyzing behavioral data to build a profile for a personal assistant.\n\n"
@@ -63,12 +74,14 @@ def run_reflection_job() -> str:
         "Valid categories: habits, work, finances, productivity, health, social"
     )
 
-    payload = json.dumps({
-        "model": CLAUDE_MODEL,
-        "max_tokens": 512,
-        "system": "You extract behavioral patterns from personal data logs. Respond with JSON only.",
-        "messages": [{"role": "user", "content": prompt}],
-    }).encode()
+    payload = json.dumps(
+        {
+            "model": CLAUDE_MODEL,
+            "max_tokens": 512,
+            "system": "You extract behavioral patterns from personal data logs. Respond with JSON only.",
+            "messages": [{"role": "user", "content": prompt}],
+        }
+    ).encode()
 
     req = urllib.request.Request(
         ANTHROPIC_API_URL,
@@ -91,7 +104,9 @@ def run_reflection_job() -> str:
         observations = data.get("observations", [])
         replace_profile_observations(observations)
         count = len([o for o in observations if o.get("text", "").strip()])
-        return f"Reflection complete. {count} profile observation{'s' if count != 1 else ''} updated."
+        return (
+            f"Reflection complete. {count} profile observation{'s' if count != 1 else ''} updated."
+        )
     except Exception as exc:
         print(f"[error] reflection job: {exc}")
         return "Reflection job failed — I'll try again next week."

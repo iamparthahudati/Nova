@@ -12,7 +12,8 @@ import urllib.request
 from .config import ANTHROPIC_API_URL, CLAUDE_API_KEY, CLAUDE_MODEL
 from .context_engine import assemble
 from .reinforcement import reinforce
-from .tools import ASSISTANT_TOOLS, ToolHandler, execute as execute_tool
+from .tools import ASSISTANT_TOOLS, ToolHandler
+from .tools import execute as execute_tool
 
 
 def _call_claude(body: dict, timeout: int) -> dict:
@@ -32,19 +33,24 @@ def _call_claude(body: dict, timeout: int) -> dict:
 
 def ask(question: str, history: list[dict] | None = None) -> str:
     """Call Claude with optional conversation history for multi-turn context."""
-    ctx = assemble(question, history)   # query-aware: recalls what's relevant now
-    body = _call_claude({
-        "model": CLAUDE_MODEL,
-        "max_tokens": 256,
-        "system": ctx.system,
-        "messages": ctx.messages + [{"role": "user", "content": question}],
-    }, timeout=15)
+    ctx = assemble(question, history)  # query-aware: recalls what's relevant now
+    body = _call_claude(
+        {
+            "model": CLAUDE_MODEL,
+            "max_tokens": 256,
+            "system": ctx.system,
+            "messages": ctx.messages + [{"role": "user", "content": question}],
+        },
+        timeout=15,
+    )
     reply = body["content"][0]["text"].strip()
-    reinforce(reply, ctx.memories)   # credit only memories used in the reply
+    reinforce(reply, ctx.memories)  # credit only memories used in the reply
     return reply
 
 
-def route(transcript: str, handlers: dict[str, ToolHandler], history: list[dict] | None = None) -> str:
+def route(
+    transcript: str, handlers: dict[str, ToolHandler], history: list[dict] | None = None
+) -> str:
     """Route a request via Claude tool use.
 
     Claude either calls a tool (action) or returns a text answer (conversation).
@@ -52,15 +58,18 @@ def route(transcript: str, handlers: dict[str, ToolHandler], history: list[dict]
     returning the spoken response string. Returns the spoken response string
     in both cases.
     """
-    ctx = assemble(transcript, history)   # query-aware: recalls what's relevant now
-    body = _call_claude({
-        "model": CLAUDE_MODEL,
-        "max_tokens": 512,
-        "system": ctx.system,
-        "tools": ASSISTANT_TOOLS,
-        "tool_choice": {"type": "auto"},
-        "messages": ctx.messages + [{"role": "user", "content": transcript}],
-    }, timeout=20)
+    ctx = assemble(transcript, history)  # query-aware: recalls what's relevant now
+    body = _call_claude(
+        {
+            "model": CLAUDE_MODEL,
+            "max_tokens": 512,
+            "system": ctx.system,
+            "tools": ASSISTANT_TOOLS,
+            "tool_choice": {"type": "auto"},
+            "messages": ctx.messages + [{"role": "user", "content": transcript}],
+        },
+        timeout=20,
+    )
 
     stop_reason = body.get("stop_reason", "")
     content = body.get("content", [])

@@ -157,17 +157,17 @@ def init_db() -> None:
 # pair rides the same mechanism: pre-2.7 rows get NULL/0, which correctly
 # marks the entire existing history as pending its first extraction pass.
 _MEMORIES_2_2_COLUMNS = [
-    ("content_hash",          "TEXT    NOT NULL DEFAULT ''"),
-    ("tier",                  "TEXT    NOT NULL DEFAULT 'short_term'"),
-    ("importance",            "REAL    NOT NULL DEFAULT 0.5"),
-    ("access_count",          "INTEGER NOT NULL DEFAULT 0"),
-    ("last_accessed_at",      "TEXT"),
-    ("supersedes_id",         "TEXT"),
-    ("deleted_at",            "TEXT"),
-    ("embedding_version",     "TEXT    NOT NULL DEFAULT '1'"),
-    ("embedding_dimension",   "INTEGER NOT NULL DEFAULT 0"),
-    ("entities_extracted_at", "TEXT"),                          # 2.7
-    ("extraction_attempts",   "INTEGER NOT NULL DEFAULT 0"),    # 2.7
+    ("content_hash", "TEXT    NOT NULL DEFAULT ''"),
+    ("tier", "TEXT    NOT NULL DEFAULT 'short_term'"),
+    ("importance", "REAL    NOT NULL DEFAULT 0.5"),
+    ("access_count", "INTEGER NOT NULL DEFAULT 0"),
+    ("last_accessed_at", "TEXT"),
+    ("supersedes_id", "TEXT"),
+    ("deleted_at", "TEXT"),
+    ("embedding_version", "TEXT    NOT NULL DEFAULT '1'"),
+    ("embedding_dimension", "INTEGER NOT NULL DEFAULT 0"),
+    ("entities_extracted_at", "TEXT"),  # 2.7
+    ("extraction_attempts", "INTEGER NOT NULL DEFAULT 0"),  # 2.7
 ]
 
 

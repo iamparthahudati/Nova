@@ -4,6 +4,7 @@ import os
 import sys
 
 from dotenv import load_dotenv
+
 from paths import REPO_ROOT
 
 load_dotenv(REPO_ROOT / ".env")  # safe to call again if the composition root already loaded .env
@@ -28,7 +29,7 @@ def _env(name: str, default: str = "") -> str:
 
 ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages"
 CLAUDE_API_KEY = _env("CLAUDE_API_KEY")
-CLAUDE_MODEL   = _env("MODEL", "claude-haiku-4-5-20251001")
+CLAUDE_MODEL = _env("MODEL", "claude-haiku-4-5-20251001")
 REPLY_LANGUAGE = os.environ.get("REPLY_LANGUAGE", "")  # e.g. "Hinglish" or "Hindi"
 
 

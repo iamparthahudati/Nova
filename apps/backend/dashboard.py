@@ -99,14 +99,22 @@ def _feed() -> list:
     for r in memory.get_recent_money(5):
         note = f" · {r['note']}" if r["note"] else ""
         arrow = "↑" if r["type"] == "earned" else "↓"
-        events.append({"kind": "money", "label": f"{arrow} ₹{r['amount']:.0f}{note}", "ts": r["created_at"]})
+        events.append(
+            {"kind": "money", "label": f"{arrow} ₹{r['amount']:.0f}{note}", "ts": r["created_at"]}
+        )
 
     for r in memory.get_recent_progress(5):
         prefix = f"[{r['area']}] " if r["area"] else ""
         events.append({"kind": "progress", "label": f"{prefix}{r['note']}", "ts": r["created_at"]})
 
     for r in memory.get_recent_reminders(5):
-        events.append({"kind": "reminder", "label": f"Reminder set · {r['text']} · {r['remind_date']}", "ts": r["created_at"]})
+        events.append(
+            {
+                "kind": "reminder",
+                "label": f"Reminder set · {r['text']} · {r['remind_date']}",
+                "ts": r["created_at"],
+            }
+        )
 
     for r in memory.get_recent_habits(5):
         events.append({"kind": "habit", "label": f"Habit · {r['name']}", "ts": r["created_at"]})
@@ -136,24 +144,26 @@ def _get_today_events() -> dict:
             f"  set seconds of {var} to 0\n"
         )
 
-    script = "".join([
-        'tell application "Calendar"\n',
-        _date_block("startBound", today),
-        f'  set endBound to startBound + {23 * 3600 + 59 * 60 + 59}\n',
-        '  set output to ""\n',
-        '  repeat with cal in calendars\n',
-        '    try\n',
-        '      repeat with e in (every event of cal)\n',
-        '        set sd to start date of e\n',
-        '        if sd >= startBound and sd <= endBound then\n',
-        '          set output to output & (summary of e) & "|" & (time string of sd) & "\\n"\n',
-        '        end if\n',
-        '      end repeat\n',
-        '    end try\n',
-        '  end repeat\n',
-        '  return output\n',
-        'end tell\n',
-    ])
+    script = "".join(
+        [
+            'tell application "Calendar"\n',
+            _date_block("startBound", today),
+            f"  set endBound to startBound + {23 * 3600 + 59 * 60 + 59}\n",
+            '  set output to ""\n',
+            "  repeat with cal in calendars\n",
+            "    try\n",
+            "      repeat with e in (every event of cal)\n",
+            "        set sd to start date of e\n",
+            "        if sd >= startBound and sd <= endBound then\n",
+            '          set output to output & (summary of e) & "|" & (time string of sd) & "\\n"\n',
+            "        end if\n",
+            "      end repeat\n",
+            "    end try\n",
+            "  end repeat\n",
+            "  return output\n",
+            "end tell\n",
+        ]
+    )
 
     try:
         result = subprocess.run(
@@ -181,7 +191,11 @@ def _get_today_events() -> dict:
 def _get_profile() -> list:
     try:
         return [
-            {"observation": o["observation"], "category": o["category"], "confidence": o["confidence"]}
+            {
+                "observation": o["observation"],
+                "category": o["category"],
+                "confidence": o["confidence"],
+            }
             for o in memory.get_profile_observations()
         ]
     except Exception:
@@ -193,7 +207,12 @@ def _get_money_detail() -> dict:
     today = datetime.now().strftime("%Y-%m-%d")
     earned, spent = memory.get_money_totals_between(month_start, today)
     transactions = [
-        {"type": r["type"], "amount": r["amount"], "note": r["note"] or "", "ago": _rel(r["created_at"])}
+        {
+            "type": r["type"],
+            "amount": r["amount"],
+            "note": r["note"] or "",
+            "ago": _rel(r["created_at"]),
+        }
         for r in memory.get_recent_money(30)
     ]
     return {
@@ -205,13 +224,15 @@ def _get_money_detail() -> dict:
 
 @app.get("/api/data")
 def api_data():
-    return JSONResponse({
-        "summary": _summary(),
-        "reminders": _reminders(),
-        "todos": _todos(),
-        "feed": _feed(),
-        "ts": datetime.now().strftime("%H:%M:%S"),
-    })
+    return JSONResponse(
+        {
+            "summary": _summary(),
+            "reminders": _reminders(),
+            "todos": _todos(),
+            "feed": _feed(),
+            "ts": datetime.now().strftime("%H:%M:%S"),
+        }
+    )
 
 
 @app.get("/api/calendar")
@@ -740,4 +761,5 @@ def index():
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="127.0.0.1", port=8000, reload=True)

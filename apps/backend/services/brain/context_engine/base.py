@@ -52,6 +52,7 @@ def dedup_key(text: str) -> str:
 @dataclass(frozen=True)
 class ContextRequest:
     """The turn, as providers are allowed to see it."""
+
     query: str
     history: tuple = ()
     now: Optional[datetime] = None
@@ -60,9 +61,10 @@ class ContextRequest:
 @dataclass
 class ContextItem:
     """One candidate fact from one provider."""
-    text: str                    # payload — identity for dedup
+
+    text: str  # payload — identity for dedup
     render: Optional[str] = None  # display line; defaults to "- {text}"
-    score: float = 0.0           # relevance within the section (higher = keep first)
+    score: float = 0.0  # relevance within the section (higher = keep first)
     meta: dict = field(default_factory=dict)
 
     @property
@@ -77,6 +79,7 @@ class ContextItem:
 @dataclass
 class Section:
     """One titled block of the assembled prompt, post-dedup, post-budget."""
+
     name: str
     title: str
     items: list[ContextItem] = field(default_factory=list)
@@ -107,11 +110,12 @@ class Section:
 @dataclass
 class AssembledContext:
     """Everything one turn's context assembly produced."""
+
     system: str
-    memories: list[dict] = field(default_factory=list)   # exact semantic dicts injected
-    messages: list[dict] = field(default_factory=list)   # recent-conversation channel
+    memories: list[dict] = field(default_factory=list)  # exact semantic dicts injected
+    messages: list[dict] = field(default_factory=list)  # recent-conversation channel
     sections: list[Section] = field(default_factory=list)
-    failures: list[str] = field(default_factory=list)    # provider names that degraded
+    failures: list[str] = field(default_factory=list)  # provider names that degraded
 
 
 class ContextProvider(ABC):
@@ -135,8 +139,7 @@ class ContextProvider(ABC):
     omit_when_empty: bool = False
 
     @abstractmethod
-    def collect(self, request: ContextRequest) -> Sequence[ContextItem]:
-        ...
+    def collect(self, request: ContextRequest) -> Sequence[ContextItem]: ...
 
 
 class MessagesProvider(ABC):
@@ -150,5 +153,4 @@ class MessagesProvider(ABC):
     name: str = ""
 
     @abstractmethod
-    def collect(self, request: ContextRequest) -> Sequence[dict]:
-        ...
+    def collect(self, request: ContextRequest) -> Sequence[dict]: ...

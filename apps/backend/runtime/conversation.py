@@ -15,11 +15,11 @@ import identity
 from memory import remember
 from services import automation, brain, calendar, knowledge, planner, voice
 
-from .mutation_chat import tool_calls_to_mutations
+from .events import publish
 from .mutation_builders import build_pomodoro_completed
+from .mutation_chat import tool_calls_to_mutations
 from .mutation_event import MutationEvent
 from .side_effects import finalize_mutations, schedule_entity_extraction
-from .events import publish
 
 # --- Tool-handler wiring -------------------------------------------------------
 # Brain only knows tool names and input dicts; each entry adapts a tool call to
@@ -37,7 +37,9 @@ TOOL_HANDLERS = {
     "log_sale": lambda a: planner.log_sale(a["name"]),
     "add_calendar_event": lambda a: calendar.create_event(a["title"], a["date"], a.get("time")),
     "get_events": lambda a: calendar.describe_events(a.get("day")),
-    "add_reminder": lambda a: planner.save_reminder(a["text"], a["remind_date"], a.get("remind_time")),
+    "add_reminder": lambda a: planner.save_reminder(
+        a["text"], a["remind_date"], a.get("remind_time")
+    ),
     "get_weather": lambda a: knowledge.get_weather(a.get("location", "")),
     "get_github_notifications": lambda a: knowledge.get_github_notifications(),
     "get_rss_updates": lambda a: knowledge.get_rss_updates(),
@@ -46,7 +48,8 @@ TOOL_HANDLERS = {
     "log_habit": lambda a: planner.log_habit(a["name"]),
     "get_habits": lambda a: planner.describe_habits_today(),
     "start_pomodoro": lambda a: automation.start_pomodoro(
-        int(a.get("minutes") or 25), voice.speak, on_complete=_remember_pomodoro),
+        int(a.get("minutes") or 25), voice.speak, on_complete=_remember_pomodoro
+    ),
     "read_my_day": lambda a: planner.build_daily_plan(),
     "get_spending_summary": lambda a: planner.get_spending_summary(a.get("period", "this week")),
 }
@@ -56,10 +59,12 @@ _tool_events: list[tuple[str, dict, str]] = []
 
 def _instrument(name: str, handler):
     """Wrap one tool handler to record (tool, args, result) for the producer pass."""
+
     def call(args):
         result = handler(args)
         _tool_events.append((name, args, result))
         return result
+
     return call
 
 
@@ -75,12 +80,14 @@ def _journal_mutations(tools_called: list[dict]) -> list[MutationEvent]:
         text = str((tool.get("args") or {}).get("text", "")).strip()
         if not text:
             continue
-        events.append(MutationEvent(
-            event_type="",
-            entity_type="journal",
-            operation="create",
-            entity={"text": text},
-        ))
+        events.append(
+            MutationEvent(
+                event_type="",
+                entity_type="journal",
+                operation="create",
+                entity={"text": text},
+            )
+        )
     return events
 
 
@@ -93,6 +100,7 @@ def _remember_exchange(transcript: str, reply: str, conversation_id: Optional[st
         try:
             remember(**record)
             from .domain_events import publish_memory_created
+
             publish_memory_created(source=record.get("source_type", "conversation"))
         except Exception as exc:
             print(f"[memory] write skipped: {exc}")
@@ -108,7 +116,7 @@ class ConversationResult:
     tools_called: list[dict] = field(default_factory=list)
 
 
-def process_message(
+def process_message(  # noqa: C901 — DEBT(nova-ci-2): exceeds Handbook §3.1 complexity 12
     transcript: str,
     conversation_id: Optional[str] = None,
     *,
@@ -145,17 +153,20 @@ def process_message(
         brain.history.add_turn(transcript, reply)
 
         tools_called = [
-            {"name": name, "args": args, "result": result}
-            for name, args, result in _tool_events
+            {"name": name, "args": args, "result": result} for name, args, result in _tool_events
         ]
         if emit_events:
             for tool in tools_called:
-                publish("chat", "chat.tool_called", {
-                    "conversation_id": cid,
-                    "tool": tool["name"],
-                    "args": tool["args"],
-                    "result": tool["result"],
-                })
+                publish(
+                    "chat",
+                    "chat.tool_called",
+                    {
+                        "conversation_id": cid,
+                        "tool": tool["name"],
+                        "args": tool["args"],
+                        "result": tool["result"],
+                    },
+                )
             publish("chat", "chat.reply", {"conversation_id": cid, "reply": reply})
 
         print(f'{identity.ASSISTANT_NAME}: "{reply}"')
@@ -183,10 +194,14 @@ def process_message(
         if speak_output:
             voice.speak(msg)
         if emit_events:
-            publish("chat", "chat.error", {
-                "conversation_id": cid,
-                "message": msg,
-            })
+            publish(
+                "chat",
+                "chat.error",
+                {
+                    "conversation_id": cid,
+                    "message": msg,
+                },
+            )
         return ConversationResult(
             reply=msg,
             conversation_id=cid,

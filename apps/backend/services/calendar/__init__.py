@@ -12,8 +12,8 @@ calls whatever handler nova.py wires up, which in turn calls here.
 """
 
 from .applescript import add_calendar_event, get_events
-from .parsing import parse_date, parse_relative, parse_time
 from .commands import create_event, describe_events
+from .parsing import parse_date, parse_relative, parse_time
 
 __all__ = [
     "add_calendar_event",

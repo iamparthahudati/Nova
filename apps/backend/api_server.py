@@ -9,6 +9,7 @@ Electron, React Native, and CLI clients should talk to this process only.
 import os
 
 import uvicorn
+
 from services.api import create_app
 
 app = create_app()

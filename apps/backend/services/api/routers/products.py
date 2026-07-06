@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends
 
 import memory
+
 from ..dependencies import RequestContext, get_request_context
 from ..schemas import ProductResponse, ProductsResponse
 

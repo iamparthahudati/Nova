@@ -29,7 +29,7 @@ from ..base import ContextItem, ContextProvider, ContextRequest
 # The injected fetch: (day: datetime | None) -> list[{"title", "time"}].
 # Module-level so the root can wire it once, before or after engine creation.
 _source: Optional[Callable[[Optional[datetime]], list[dict]]] = None
-_cache: Optional[tuple[float, str, list[dict]]] = None   # (monotonic, day-key, events)
+_cache: Optional[tuple[float, str, list[dict]]] = None  # (monotonic, day-key, events)
 
 
 def set_calendar_source(fetch: Optional[Callable[[Optional[datetime]], list[dict]]]) -> None:
@@ -43,7 +43,7 @@ class CalendarContextProvider(ContextProvider):
     name = "calendar"
     title = "Today's Calendar"
     budget = CALENDAR_CONTEXT_TOKEN_BUDGET
-    omit_when_empty = True   # empty day → no section; never a "None" block
+    omit_when_empty = True  # empty day → no section; never a "None" block
 
     def collect(self, request: ContextRequest) -> list[ContextItem]:
         if not CALENDAR_CONTEXT_ENABLED or _source is None:
@@ -60,7 +60,7 @@ class CalendarContextProvider(ContextProvider):
     @staticmethod
     def _events_today(now: datetime) -> list[dict]:
         global _cache
-        day_key = now.strftime("%Y-%m-%d")   # midnight rollover invalidates
+        day_key = now.strftime("%Y-%m-%d")  # midnight rollover invalidates
         if _cache is not None:
             fetched_at, cached_day, events = _cache
             if cached_day == day_key and (

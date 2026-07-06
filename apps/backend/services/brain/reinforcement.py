@@ -42,10 +42,7 @@ _WORD_RE = re.compile(r"[a-z0-9']+")
 
 def _significant_words(text: str) -> set[str]:
     """Content words of `text`, lowercased, stop-words and 1-char tokens dropped."""
-    return {
-        w for w in _WORD_RE.findall(text.lower())
-        if len(w) > 1 and w not in _STOPWORDS
-    }
+    return {w for w in _WORD_RE.findall(text.lower()) if len(w) > 1 and w not in _STOPWORDS}
 
 
 def _grounding_overlap(memory_text: str, reply_words: set[str]) -> float:

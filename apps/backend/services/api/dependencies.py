@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Annotated, Optional
 
-from fastapi import Depends, Header
+from fastapi import Header
 
 
 @dataclass(frozen=True)

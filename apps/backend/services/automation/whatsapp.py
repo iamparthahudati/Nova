@@ -12,16 +12,16 @@ def send_whatsapp_message(contact_name: str, message: str) -> str:
     script = (
         f'tell application "Contacts"\n'
         f'  set matched to (every person whose name contains "{safe_name}")\n'
-        f'  if (count of matched) = 0 then\n'
+        f"  if (count of matched) = 0 then\n"
         f'    return "NOT_FOUND"\n'
-        f'  end if\n'
-        f'  set p to item 1 of matched\n'
-        f'  set phoneList to phones of p\n'
-        f'  if (count of phoneList) = 0 then\n'
+        f"  end if\n"
+        f"  set p to item 1 of matched\n"
+        f"  set phoneList to phones of p\n"
+        f"  if (count of phoneList) = 0 then\n"
         f'    return "NO_PHONE"\n'
-        f'  end if\n'
-        f'  return value of item 1 of phoneList\n'
-        f'end tell\n'
+        f"  end if\n"
+        f"  return value of item 1 of phoneList\n"
+        f"end tell\n"
     )
     try:
         result = run_applescript(script, timeout=30)
@@ -41,12 +41,12 @@ def send_whatsapp_message(contact_name: str, message: str) -> str:
     url = f"whatsapp://send?phone={cleaned}&text={encoded}"
     send_script = (
         f'open location "{url}"\n'
-        f'delay 2\n'
+        f"delay 2\n"
         f'tell application "System Events"\n'
         f'  tell process "WhatsApp"\n'
-        f'    keystroke return\n'
-        f'  end tell\n'
-        f'end tell\n'
+        f"    keystroke return\n"
+        f"  end tell\n"
+        f"end tell\n"
     )
     try:
         result = run_applescript(send_script, timeout=15)

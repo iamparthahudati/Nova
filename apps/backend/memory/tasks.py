@@ -66,8 +66,7 @@ def find_task_by_text(text: str, status: Optional[str] = None) -> Optional[dict]
 def get_all_tasks(limit: Optional[int] = None) -> list[dict]:
     """Open and completed tasks — open first, newest first within each group."""
     query = (
-        "SELECT * FROM tasks ORDER BY "
-        "CASE status WHEN 'open' THEN 0 ELSE 1 END, created_at DESC"
+        "SELECT * FROM tasks ORDER BY " "CASE status WHEN 'open' THEN 0 ELSE 1 END, created_at DESC"
     )
     params: tuple = ()
     if limit is not None:
@@ -97,9 +96,7 @@ def count_open_tasks() -> int:
 def get_recent_tasks(n: int = 5) -> list[dict]:
     """Most recent tasks regardless of status, newest first — for activity feeds."""
     with _connection.connect(rows=True) as con:
-        rows = con.execute(
-            "SELECT * FROM tasks ORDER BY created_at DESC LIMIT ?", (n,)
-        ).fetchall()
+        rows = con.execute("SELECT * FROM tasks ORDER BY created_at DESC LIMIT ?", (n,)).fetchall()
     return [dict(r) for r in rows]
 
 

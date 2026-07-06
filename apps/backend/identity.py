@@ -20,6 +20,7 @@ backward compatibility via automatic migration from legacy Rai paths.
 import os
 
 from dotenv import load_dotenv
+
 from paths import REPO_ROOT
 
 load_dotenv(REPO_ROOT / ".env")  # safe to call again if the composition root already did

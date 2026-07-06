@@ -95,7 +95,9 @@ def _tool_call_to_mutation(tool: str, args: dict, result: str) -> Optional[Mutat
     )
 
 
-def _entity_for_tool(tool: str, args: dict, result: str) -> Optional[dict]:
+def _entity_for_tool(  # noqa: C901 — DEBT(nova-ci-2): exceeds Handbook §3.1 complexity 12
+    tool: str, args: dict, result: str
+) -> Optional[dict]:
     if tool == "add_task":
         row = memory.find_task_by_text(str(args.get("text", "")).strip(), status="open")
         if row is not None:

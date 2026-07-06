@@ -4,13 +4,12 @@ from __future__ import annotations
 
 import threading
 
+import memory_producers
 from memory import remember
 from services import brain
 
 from .domain_events import publish_memory_created, publish_mutation_events
 from .mutation_event import MutationEvent
-
-import memory_producers
 
 
 def apply_memory_producers(events: list[MutationEvent]) -> bool:

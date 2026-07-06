@@ -1,0 +1,52 @@
+name: backend-ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    paths:
+      - "apps/backend/**"
+      - ".github/workflows/backend-ci.yml"
+      - "scripts/dev/check_limits.py"
+
+defaults:
+  run:
+    working-directory: apps/backend
+
+jobs:
+  gate:
+    name: format, lint, size limits, architecture + unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: "pip"
+          cache-dependency-path: apps/backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: black --check
+        run: black --check .
+
+      - name: isort --check
+        run: isort --check-only .
+
+      - name: flake8
+        run: flake8 .
+
+      - name: mypy (report-only)
+        # DEBT(nova-ci-1): 14 pre-existing type errors as of the PR that
+        # introduced this gate (see pyproject.toml [tool.mypy]). Non-blocking
+        # until a dedicated type-hygiene pass lands; remove `|| true` then.
+        run: mypy memory runtime services *.py || true
+
+      - name: check_limits (file/function size — Handbook §3.1)
+        working-directory: .
+        run: python scripts/dev/check_limits.py
+
+      - name: pytest (unit + integration + architecture)
+        run: python -m pytest tests/ -q

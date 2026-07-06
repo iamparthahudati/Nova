@@ -3,6 +3,7 @@ from datetime import datetime
 from fastapi import APIRouter, Depends, Query
 
 from services import calendar
+
 from ..dependencies import RequestContext, get_request_context
 from ..schemas import CalendarEventResponse, CalendarResponse
 

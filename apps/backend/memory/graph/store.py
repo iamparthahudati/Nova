@@ -35,8 +35,7 @@ def _entity_dict(row) -> dict:
 # ── Entities ─────────────────────────────────────────────────────────────────
 
 
-def insert_entity(entity_id: str, entity_type: str, canonical_name: str,
-                  attributes: dict) -> str:
+def insert_entity(entity_id: str, entity_type: str, canonical_name: str, attributes: dict) -> str:
     created_at = _connection.now()
     with _connection.connect() as con:
         con.execute(
@@ -141,9 +140,14 @@ def count_edges_by_relation() -> dict[str, int]:
 # ── Edges ────────────────────────────────────────────────────────────────────
 
 
-def insert_edge(edge_id: str, from_entity_id: str, to_entity_id: str,
-                relation_type: str, weight: float,
-                source_memory_id: Optional[str]) -> str:
+def insert_edge(
+    edge_id: str,
+    from_entity_id: str,
+    to_entity_id: str,
+    relation_type: str,
+    weight: float,
+    source_memory_id: Optional[str],
+) -> str:
     created_at = _connection.now()
     with _connection.connect() as con:
         con.execute(
@@ -151,8 +155,15 @@ def insert_edge(edge_id: str, from_entity_id: str, to_entity_id: str,
                (id, from_entity_id, to_entity_id, relation_type, weight,
                 source_memory_id, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            (edge_id, from_entity_id, to_entity_id, relation_type, weight,
-             source_memory_id, created_at),
+            (
+                edge_id,
+                from_entity_id,
+                to_entity_id,
+                relation_type,
+                weight,
+                source_memory_id,
+                created_at,
+            ),
         )
     return created_at
 
@@ -163,8 +174,7 @@ def get_edge(edge_id: str) -> Optional[dict]:
     return dict(row) if row else None
 
 
-def find_edge(from_entity_id: str, to_entity_id: str,
-              relation_type: str) -> Optional[dict]:
+def find_edge(from_entity_id: str, to_entity_id: str, relation_type: str) -> Optional[dict]:
     """The one row for this (from, to, relation) triple, if it exists."""
     with _connection.connect(rows=True) as con:
         row = con.execute(
@@ -175,8 +185,7 @@ def find_edge(from_entity_id: str, to_entity_id: str,
     return dict(row) if row else None
 
 
-def reinforce_edge(edge_id: str, weight_delta: float,
-                   source_memory_id: Optional[str]) -> None:
+def reinforce_edge(edge_id: str, weight_delta: float, source_memory_id: Optional[str]) -> None:
     """Add evidence to an existing edge; backfill provenance if it had none."""
     with _connection.connect() as con:
         con.execute(
@@ -188,8 +197,9 @@ def reinforce_edge(edge_id: str, weight_delta: float,
         )
 
 
-def edges_for_entity(entity_id: str, relation_type: Optional[str] = None,
-                     direction: str = "any") -> list[dict]:
+def edges_for_entity(
+    entity_id: str, relation_type: Optional[str] = None, direction: str = "any"
+) -> list[dict]:
     """Edges touching an entity: 'out' (from it), 'in' (to it), or 'any'."""
     clauses = {
         "out": "e.from_entity_id = :id",
@@ -225,8 +235,7 @@ def delete_edges_for_entity(entity_id: str) -> int:
 # ── Traversal ────────────────────────────────────────────────────────────────
 
 
-def related_within(entity_id: str, depth: int,
-                   relation_type: Optional[str] = None) -> list[dict]:
+def related_within(entity_id: str, depth: int, relation_type: Optional[str] = None) -> list[dict]:
     """Entities reachable within `depth` undirected hops, with their min depth.
 
     This is the recursive-CTE traversal ARCHITECTURE_v2 §4 chose SQLite for.

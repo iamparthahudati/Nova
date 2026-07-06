@@ -33,13 +33,12 @@ def format_system_prompt(sections: list, now: datetime) -> str:
         f"The current time is {current_time}. Never ask the user for the current date or time."
     )
     body = "\n\n".join(
-        f"{section.title}:\n{section.rendered()}"
-        for section in sections
-        if section.include
+        f"{section.title}:\n{section.rendered()}" for section in sections if section.include
     )
     lang_instruction = (
         f" Reply in {REPLY_LANGUAGE} — keep it natural and spoken-friendly."
-        if REPLY_LANGUAGE else ""
+        if REPLY_LANGUAGE
+        else ""
     )
     footer = (
         "Keep replies short and natural — 2 to 4 spoken sentences, no lists or markdown. "

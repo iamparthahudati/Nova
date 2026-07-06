@@ -7,9 +7,9 @@ this package imports from outside it.
 """
 
 from .audio import new_listener_state
+from .session import poll_wake_word, record_command, wait_for_followup
 from .transcription import load_model
 from .tts import speak
-from .session import record_command, poll_wake_word, wait_for_followup
 
 __all__ = [
     "load_model",

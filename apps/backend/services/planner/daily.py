@@ -16,9 +16,15 @@ def build_daily_plan() -> str:
 
     parts = ["Here's your day."]
     if sched["due_reminders"]:
-        parts.append("Reminders today: " + "; ".join(r["text"] for r in sched["due_reminders"]) + ".")
+        parts.append(
+            "Reminders today: " + "; ".join(r["text"] for r in sched["due_reminders"]) + "."
+        )
     if sched["events"]:
-        parts.append("Calendar: " + "; ".join(f"{e['title']} at {e['time']}" for e in sched["events"][:3]) + ".")
+        parts.append(
+            "Calendar: "
+            + "; ".join(f"{e['title']} at {e['time']}" for e in sched["events"][:3])
+            + "."
+        )
     else:
         parts.append("Nothing on the calendar today.")
     if sched["top_tasks"]:

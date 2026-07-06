@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends
 
+from runtime.conversation import process_message
+
 from ..dependencies import RequestContext, get_request_context
 from ..schemas import ChatRequest, ChatResponse, ToolCallRecord
-from runtime.conversation import process_message
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 

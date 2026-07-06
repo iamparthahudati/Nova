@@ -98,7 +98,6 @@ def demote_memory(memory_id: str) -> Optional[str]:
     if row is None:
         return None
     current = row["tier"]
-    ladder = (*_ACTIVE_LADDER, ranking.ARCHIVED)  # long → medium → short → archived
     order = (ranking.LONG_TERM, ranking.MEDIUM_TERM, ranking.SHORT_TERM, ranking.ARCHIVED)
     if current not in order:
         return current
@@ -128,8 +127,11 @@ def restore_memory(memory_id: str, tier: str = ranking.SHORT_TERM) -> None:
 # ── Score-driven evaluation (the unattended path) ─────────────────────────────
 
 
-def evaluate_memory(memory_id: str, now: Optional[datetime] = None,
-                    config: ranking.RankingConfig = ranking.DEFAULT_CONFIG) -> Optional[dict]:
+def evaluate_memory(
+    memory_id: str,
+    now: Optional[datetime] = None,
+    config: ranking.RankingConfig = ranking.DEFAULT_CONFIG,
+) -> Optional[dict]:
     """Dry-run: what tier *should* this memory be in, and why? Applies nothing."""
     row = ledger.get(memory_id)
     if row is None or row["deleted_at"] is not None:
@@ -148,8 +150,9 @@ def evaluate_memory(memory_id: str, now: Optional[datetime] = None,
     }
 
 
-def recalculate_scores(now: Optional[datetime] = None,
-                       config: ranking.RankingConfig = ranking.DEFAULT_CONFIG) -> dict:
+def recalculate_scores(
+    now: Optional[datetime] = None, config: ranking.RankingConfig = ranking.DEFAULT_CONFIG
+) -> dict:
     """Re-tier every active memory from its current score. The core of maintenance.
 
     Purely score-driven: no memory is promoted or demoted on a hardcoded rule,
@@ -169,14 +172,20 @@ def recalculate_scores(now: Optional[datetime] = None,
             ledger.soft_delete(row["id"])
         else:
             ledger.set_tier(row["id"], target)
-        transitions.append({
-            "id": row["id"], "from": current, "to": target, "score": round(score, 4),
-        })
+        transitions.append(
+            {
+                "id": row["id"],
+                "from": current,
+                "to": target,
+                "score": round(score, 4),
+            }
+        )
     return {"evaluated": ledger.count(), "transitions": transitions}
 
 
-def purge_forgotten(now: Optional[datetime] = None,
-                    config: ranking.RankingConfig = ranking.DEFAULT_CONFIG) -> list[str]:
+def purge_forgotten(
+    now: Optional[datetime] = None, config: ranking.RankingConfig = ranking.DEFAULT_CONFIG
+) -> list[str]:
     """Hard-delete soft-deleted rows past the retention window. Returns purged ids.
 
     SQLite side only — the caller (service.maintenance) is responsible for

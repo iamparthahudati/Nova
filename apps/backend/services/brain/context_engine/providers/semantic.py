@@ -44,7 +44,7 @@ class SemanticContextProvider(ContextProvider):
         return [
             ContextItem(
                 text=mem["text"],
-                score=mem.get("score", 0.0),   # composite score → section order
+                score=mem.get("score", 0.0),  # composite score → section order
                 meta={"memory": mem},
             )
             for mem in candidates

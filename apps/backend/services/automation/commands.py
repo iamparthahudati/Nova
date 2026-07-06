@@ -13,7 +13,10 @@ COMMANDS = {
     # WhatsApp.app on this Mac has a hidden U+200E mark before its name, so
     # `open -a WhatsApp` can't resolve it by name — open the bundle path instead.
     "whatsapp": ["open", "/Applications/‎WhatsApp.app"],
-    "what's up": ["open", "/Applications/‎WhatsApp.app"],  # base.en mishears "WhatsApp" phonetically
+    "what's up": [
+        "open",
+        "/Applications/‎WhatsApp.app",
+    ],  # base.en mishears "WhatsApp" phonetically
     "whats up": ["open", "/Applications/‎WhatsApp.app"],
     "spotify": ["open", "-a", "Spotify"],
     "terminal": ["open", "-a", "Terminal"],

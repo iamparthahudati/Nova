@@ -66,8 +66,7 @@ def _canonical_relation(relation_type: str) -> str:
 # ── Entities ─────────────────────────────────────────────────────────────────
 
 
-def create_entity(entity_type: str, name: str,
-                  attributes: Optional[dict] = None) -> str:
+def create_entity(entity_type: str, name: str, attributes: Optional[dict] = None) -> str:
     """Create an entity, or fold into the existing one. Returns its id.
 
     Duplicate detection is by (type, canonical name), case-insensitive: creating
@@ -110,9 +109,7 @@ def find_entity(name: str, entity_type: Optional[str] = None) -> Optional[dict]:
     name = _canonical_name(name)
     if not name:
         return None
-    return store.find_by_name(
-        name, _canonical_type(entity_type) if entity_type else None
-    )
+    return store.find_by_name(name, _canonical_type(entity_type) if entity_type else None)
 
 
 def delete_entity(entity_id: str) -> bool:
@@ -134,9 +131,13 @@ def delete_entity(entity_id: str) -> bool:
 # ── Edges ────────────────────────────────────────────────────────────────────
 
 
-def link_entities(from_entity_id: str, to_entity_id: str, relation_type: str,
-                  weight: float = 1.0,
-                  source_memory_id: Optional[str] = None) -> str:
+def link_entities(
+    from_entity_id: str,
+    to_entity_id: str,
+    relation_type: str,
+    weight: float = 1.0,
+    source_memory_id: Optional[str] = None,
+) -> str:
     """Create (or reinforce) a directed edge. Returns the edge id.
 
     One row exists per (from, to, relation) triple: linking an existing triple
@@ -163,13 +164,15 @@ def link_entities(from_entity_id: str, to_entity_id: str, relation_type: str,
         return existing["id"]
 
     edge_id = str(uuid.uuid4())
-    store.insert_edge(edge_id, from_entity_id, to_entity_id, relation_type,
-                      weight, source_memory_id)
+    store.insert_edge(
+        edge_id, from_entity_id, to_entity_id, relation_type, weight, source_memory_id
+    )
     return edge_id
 
 
-def entity_edges(entity_id: str, relation_type: Optional[str] = None,
-                 direction: str = "any") -> list[dict]:
+def entity_edges(
+    entity_id: str, relation_type: Optional[str] = None, direction: str = "any"
+) -> list[dict]:
     """Edge rows touching an entity, heaviest first.
 
     `direction` is 'out' (edges from it), 'in' (edges to it), or 'any'. This is
@@ -179,7 +182,8 @@ def entity_edges(entity_id: str, relation_type: Optional[str] = None,
     if direction not in ("out", "in", "any"):
         raise ValueError("direction must be 'out', 'in', or 'any'")
     return store.edges_for_entity(
-        entity_id, _canonical_relation(relation_type) if relation_type else None,
+        entity_id,
+        _canonical_relation(relation_type) if relation_type else None,
         direction,
     )
 
@@ -195,8 +199,9 @@ def delete_edge(edge_id: str) -> bool:
 # ── Traversal ────────────────────────────────────────────────────────────────
 
 
-def related_entities(entity_id: str, relation_type: Optional[str] = None,
-                     depth: int = 1) -> list[dict]:
+def related_entities(
+    entity_id: str, relation_type: Optional[str] = None, depth: int = 1
+) -> list[dict]:
     """Entities within `depth` undirected hops, nearest first.
 
     Each result is an entity dict plus its `depth` (shortest hop count, 1-based).
@@ -207,7 +212,8 @@ def related_entities(entity_id: str, relation_type: Optional[str] = None,
     """
     depth = max(1, min(int(depth), MAX_DEPTH))
     return store.related_within(
-        entity_id, depth,
+        entity_id,
+        depth,
         _canonical_relation(relation_type) if relation_type else None,
     )
 

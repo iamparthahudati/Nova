@@ -10,13 +10,17 @@ returns a spoken-response string) and Brain only decides which one to call.
 from . import history
 from .client import ask, route
 from .config import (
-    ANTHROPIC_API_URL, CLAUDE_API_KEY, CLAUDE_MODEL, REPLY_LANGUAGE,
+    ANTHROPIC_API_URL,
+    CLAUDE_API_KEY,
+    CLAUDE_MODEL,
+    REPLY_LANGUAGE,
     check_api_config,
 )
 from .context_engine import build_system_prompt, set_calendar_source
 from .extraction import run_entity_extraction
 from .reflection import run_reflection_job, should_run_reflection
-from .tools import ASSISTANT_TOOLS, execute as execute_tool
+from .tools import ASSISTANT_TOOLS
+from .tools import execute as execute_tool
 
 __all__ = [
     "history",

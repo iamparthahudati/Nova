@@ -1,6 +1,6 @@
 """Rolling conversation history for the current wake-word session."""
 
-MAX_HISTORY_TURNS = 4   # keep last 4 user-assistant pairs = 8 messages
+MAX_HISTORY_TURNS = 4  # keep last 4 user-assistant pairs = 8 messages
 
 _session_history: list[dict] = []
 

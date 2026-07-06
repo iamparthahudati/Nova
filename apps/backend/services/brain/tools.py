@@ -21,7 +21,10 @@ ASSISTANT_TOOLS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "contact": {"type": "string", "description": "Contact name as it appears in Contacts"},
+                "contact": {
+                    "type": "string",
+                    "description": "Contact name as it appears in Contacts",
+                },
                 "message": {"type": "string", "description": "Text of the message to send"},
             },
             "required": ["contact", "message"],
@@ -79,7 +82,10 @@ ASSISTANT_TOOLS = [
             "properties": {
                 "type": {"type": "string", "enum": ["earned", "spent"]},
                 "amount": {"type": "number"},
-                "note": {"type": "string", "description": "Optional description of the transaction"},
+                "note": {
+                    "type": "string",
+                    "description": "Optional description of the transaction",
+                },
             },
             "required": ["type", "amount"],
         },
@@ -91,7 +97,10 @@ ASSISTANT_TOOLS = [
             "type": "object",
             "properties": {
                 "note": {"type": "string"},
-                "area": {"type": "string", "description": "Optional category (e.g. 'work', 'health')"},
+                "area": {
+                    "type": "string",
+                    "description": "Optional category (e.g. 'work', 'health')",
+                },
             },
             "required": ["note"],
         },
@@ -231,7 +240,10 @@ ASSISTANT_TOOLS = [
         "input_schema": {
             "type": "object",
             "properties": {
-                "name": {"type": "string", "description": "Name of the habit (e.g. 'workout', 'meditation', 'reading')"},
+                "name": {
+                    "type": "string",
+                    "description": "Name of the habit (e.g. 'workout', 'meditation', 'reading')",
+                },
             },
             "required": ["name"],
         },

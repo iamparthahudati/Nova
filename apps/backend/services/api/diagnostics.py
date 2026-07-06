@@ -100,8 +100,9 @@ def _check_brain() -> SubsystemDiagnostic:
 
 def _check_calendar() -> SubsystemDiagnostic:
     try:
-        from services import calendar
         from datetime import datetime
+
+        from services import calendar
 
         calendar.get_events(datetime.now())
         return SubsystemDiagnostic(name="calendar", status="ok", message="Calendar accessible")

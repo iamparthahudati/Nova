@@ -6,7 +6,6 @@ Run:  cd apps/backend && python -m unittest discover tests -v
 from __future__ import annotations
 
 import json
-import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -19,9 +18,8 @@ from memory import _connection
 from memory.schema import init_db
 from runtime.domain_events import publish_mutation_events
 from runtime.events import publish, subscribe
-from runtime.mutation_chat import tool_mutation_succeeded
+from runtime.mutation_chat import tool_calls_to_mutations, tool_mutation_succeeded
 from runtime.mutation_event import MutationEvent
-from runtime.mutation_chat import tool_calls_to_mutations
 from services.api import create_app
 
 
@@ -223,22 +221,34 @@ class PhaseAApiTests(unittest.TestCase):
 
 class PhaseADomainEventTests(unittest.TestCase):
     def test_chat_tool_event_mapping(self) -> None:
-        events = tool_calls_to_mutations([
-            {"name": "add_task", "args": {"text": "x"}, "result": "Task logged."},
-        ])
+        events = tool_calls_to_mutations(
+            [
+                {"name": "add_task", "args": {"text": "x"}, "result": "Task logged."},
+            ]
+        )
         self.assertEqual(events[0].event_type, "task.created")
-        events = tool_calls_to_mutations([
-            {"name": "complete_task", "args": {"text": "x"}, "result": "Task marked done."},
-        ])
+        events = tool_calls_to_mutations(
+            [
+                {"name": "complete_task", "args": {"text": "x"}, "result": "Task marked done."},
+            ]
+        )
         self.assertEqual(events[0].event_type, "task.updated")
 
     def test_tool_mutation_succeeded(self) -> None:
-        self.assertTrue(tool_mutation_succeeded(
-            "complete_task", {"text": "x"}, "Task marked done.",
-        ))
-        self.assertFalse(tool_mutation_succeeded(
-            "complete_task", {"text": "x"}, "No matching task found.",
-        ))
+        self.assertTrue(
+            tool_mutation_succeeded(
+                "complete_task",
+                {"text": "x"},
+                "Task marked done.",
+            )
+        )
+        self.assertFalse(
+            tool_mutation_succeeded(
+                "complete_task",
+                {"text": "x"},
+                "No matching task found.",
+            )
+        )
 
     def test_publish_mutation_events_skips_empty_event_type(self) -> None:
         received: list[tuple] = []
@@ -247,20 +257,22 @@ class PhaseADomainEventTests(unittest.TestCase):
             received.append((channel, event_type, payload))
 
         subscribe(handler)
-        publish_mutation_events([
-            MutationEvent(
-                event_type="",
-                entity_type="journal",
-                operation="create",
-                entity={"text": "entry"},
-            ),
-            MutationEvent(
-                event_type="task.created",
-                entity_type="task",
-                operation="create",
-                entity={"id": 1, "text": "x"},
-            ),
-        ])
+        publish_mutation_events(
+            [
+                MutationEvent(
+                    event_type="",
+                    entity_type="journal",
+                    operation="create",
+                    entity={"text": "entry"},
+                ),
+                MutationEvent(
+                    event_type="task.created",
+                    entity_type="task",
+                    operation="create",
+                    entity={"id": 1, "text": "x"},
+                ),
+            ]
+        )
         events = {e[1] for e in received if e[0] == "events"}
         self.assertEqual(events, {"task.created"})
 
@@ -271,20 +283,22 @@ class PhaseADomainEventTests(unittest.TestCase):
             received.append((channel, event_type, payload))
 
         subscribe(handler)
-        publish_mutation_events([
-            MutationEvent(
-                event_type="task.created",
-                entity_type="task",
-                operation="create",
-                entity={"id": 1, "text": "x"},
-            ),
-            MutationEvent(
-                event_type="task.updated",
-                entity_type="task",
-                operation="complete",
-                entity={"id": 1, "text": "x", "status": "done"},
-            ),
-        ])
+        publish_mutation_events(
+            [
+                MutationEvent(
+                    event_type="task.created",
+                    entity_type="task",
+                    operation="create",
+                    entity={"id": 1, "text": "x"},
+                ),
+                MutationEvent(
+                    event_type="task.updated",
+                    entity_type="task",
+                    operation="complete",
+                    entity={"id": 1, "text": "x", "status": "done"},
+                ),
+            ]
+        )
         events = {e[1] for e in received if e[0] == "events"}
         self.assertIn("task.created", events)
         self.assertIn("task.updated", events)
@@ -312,11 +326,15 @@ class PhaseAWebSocketIntegrationTests(unittest.TestCase):
     def test_websocket_hub_delivers_runtime_event(self) -> None:
         with TestClient(create_app()) as client:
             with client.websocket_connect("/ws/events") as ws:
-                publish("events", "task.updated", {
-                    "entity_type": "task",
-                    "operation": "complete",
-                    "entity_id": 1,
-                })
+                publish(
+                    "events",
+                    "task.updated",
+                    {
+                        "entity_type": "task",
+                        "operation": "complete",
+                        "entity_id": 1,
+                    },
+                )
                 msg = json.loads(ws.receive_text())
                 self.assertEqual(msg["event"], "task.updated")
                 self.assertEqual(msg["data"]["entity_type"], "task")

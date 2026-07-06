@@ -89,7 +89,8 @@ def due_timed_reminders(now: Optional[datetime] = None) -> list[dict]:
     now = now or datetime.now()
     now_hhmm = now.strftime("%H:%M")
     return [
-        r for r in memory.get_due_reminders(now)
+        r
+        for r in memory.get_due_reminders(now)
         if r.get("remind_time") and r["remind_time"] <= now_hhmm
     ]
 
@@ -137,5 +138,7 @@ def get_spending_summary(period: str = "this week") -> str:
         parts.append(f"spent {spent:.0f}")
     summary = " and ".join(parts)
     net = earned - spent
-    net_str = f" Net: {'+' if net >= 0 else ''}{net:.0f} rupees." if earned > 0 and spent > 0 else ""
+    net_str = (
+        f" Net: {'+' if net >= 0 else ''}{net:.0f} rupees." if earned > 0 and spent > 0 else ""
+    )
     return f"{label.capitalize()}: {summary} rupees.{net_str}"

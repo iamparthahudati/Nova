@@ -5,19 +5,44 @@ from datetime import datetime, timedelta
 from typing import Optional, Tuple
 
 _WEEKDAY_MAP = {
-    "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
-    "friday": 4, "saturday": 5, "sunday": 6,
+    "monday": 0,
+    "tuesday": 1,
+    "wednesday": 2,
+    "thursday": 3,
+    "friday": 4,
+    "saturday": 5,
+    "sunday": 6,
 }
 
 _MONTH_MAP = {
-    "january": 1, "jan": 1, "february": 2, "feb": 2, "march": 3, "mar": 3,
-    "april": 4, "apr": 4, "may": 5, "june": 6, "jun": 6,
-    "july": 7, "jul": 7, "august": 8, "aug": 8, "september": 9, "sep": 9,
-    "october": 10, "oct": 10, "november": 11, "nov": 11, "december": 12, "dec": 12,
+    "january": 1,
+    "jan": 1,
+    "february": 2,
+    "feb": 2,
+    "march": 3,
+    "mar": 3,
+    "april": 4,
+    "apr": 4,
+    "may": 5,
+    "june": 6,
+    "jun": 6,
+    "july": 7,
+    "jul": 7,
+    "august": 8,
+    "aug": 8,
+    "september": 9,
+    "sep": 9,
+    "october": 10,
+    "oct": 10,
+    "november": 11,
+    "nov": 11,
+    "december": 12,
+    "dec": 12,
 }
 
 
-def parse_date(text: str) -> Optional[datetime]:
+# DEBT(nova-ci-2): exceeds Handbook §3.1 max-complexity 12; needs decomposition.
+def parse_date(text: str) -> Optional[datetime]:  # noqa: C901
     """Parse a natural-language date string into a datetime (midnight, local time)."""
     # Commas are separators, never meaning ("July 6, 2026" == "July 6 2026").
     t = text.lower().replace(",", " ").strip()

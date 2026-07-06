@@ -7,6 +7,7 @@ import json
 from typing import Literal
 
 from fastapi import WebSocket, WebSocketDisconnect
+
 from runtime.events import subscribe
 
 Channel = Literal["chat", "events"]

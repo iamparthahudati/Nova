@@ -28,7 +28,9 @@ def build_home_response() -> HomeResponse:
         HomeCard(id="open_tasks", label="Open tasks", value=str(open_tasks), icon="list-todo"),
         HomeCard(id="earned_month", label="Monthly earned", value=f"{earned:.0f}", icon="wallet"),
         HomeCard(id="spent_month", label="Monthly spent", value=f"{spent:.0f}", icon="activity"),
-        HomeCard(id="memory_count", label="Memories indexed", value=str(memory_count), icon="brain"),
+        HomeCard(
+            id="memory_count", label="Memories indexed", value=str(memory_count), icon="brain"
+        ),
         HomeCard(
             id="reminder_count",
             label="Upcoming reminders",

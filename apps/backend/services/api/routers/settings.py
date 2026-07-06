@@ -1,8 +1,10 @@
+from fastapi import APIRouter, Depends
+
 import identity
 import memory
-from fastapi import APIRouter, Depends
-from services.brain import config as brain_config
 from services import planner
+from services.brain import config as brain_config
+
 from ..dependencies import RequestContext, get_request_context
 from ..schemas import ProfileObservationResponse, SettingsResponse
 

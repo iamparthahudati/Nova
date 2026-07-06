@@ -38,7 +38,7 @@ def _candidate_phrases(query: str) -> list[str]:
     phrases = []
     for n in (3, 2, 1):
         for i in range(len(words) - n + 1):
-            phrase = " ".join(words[i:i + n])
+            phrase = " ".join(words[i : i + n])
             if n == 1 and len(phrase) < 3:
                 continue
             phrases.append(phrase)
@@ -49,7 +49,7 @@ class GraphContextProvider(ContextProvider):
     name = "knowledge_graph"
     title = "Known Connections (from the knowledge graph)"
     budget = GRAPH_CONTEXT_TOKEN_BUDGET
-    omit_when_empty = True   # no matched entities → no section, not "None"
+    omit_when_empty = True  # no matched entities → no section, not "None"
 
     def collect(self, request: ContextRequest) -> list[ContextItem]:
         if not GRAPH_CONTEXT_ENABLED or not request.query:
@@ -66,7 +66,7 @@ class GraphContextProvider(ContextProvider):
                 entities.append(entity)
 
         items: list[ContextItem] = []
-        seen_edges: set[str] = set()      # both endpoints matched → edge once
+        seen_edges: set[str] = set()  # both endpoints matched → edge once
         entity_cache: dict[str, dict] = {e["id"]: e for e in entities}
 
         def resolve(entity_id: str):
@@ -88,8 +88,10 @@ class GraphContextProvider(ContextProvider):
                     f"—{edge['relation_type']}→ "
                     f"{target['canonical_name']} ({target['type']})"
                 )
-                items.append(ContextItem(
-                    text=fact,
-                    score=float(edge.get("weight", 1.0)),  # repetition = evidence
-                ))
+                items.append(
+                    ContextItem(
+                        text=fact,
+                        score=float(edge.get("weight", 1.0)),  # repetition = evidence
+                    )
+                )
         return items

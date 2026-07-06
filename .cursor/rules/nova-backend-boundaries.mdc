@@ -1,0 +1,39 @@
+---
+description: Nova backend package boundaries — frozen architecture, no sideways/downward imports
+globs: apps/backend/**/*.py
+alwaysApply: false
+---
+
+# Package boundaries (Handbook §1.8, §5.4 — enforced by tests/architecture/)
+
+The architecture is frozen. Implement inside it; never propose a redesign,
+move packages around, or add a new package taxonomy in this repo.
+
+Real, current allowed import edges (see
+`apps/backend/tests/architecture/test_dependencies.py` — the actual source
+of truth; this rule summarizes it):
+
+- `services/voice`, `services/calendar`, `services/automation` — leaves.
+  Import nothing from `memory`, `runtime`, or another service.
+- `services/knowledge` -> `memory`, `services.brain` only.
+- `services/brain` -> `memory` only. **Only this package may call the
+  Claude API** (no `ANTHROPIC_API_URL` / `x-api-key` anywhere else).
+- `services/planner` -> `memory`, `services.calendar` only.
+- `services/api` -> `memory`, `runtime`, `services.brain`, `services.calendar`,
+  `services.planner`. Nothing may import `services.api` back.
+- `memory` -> stdlib / `sqlite3` / `lancedb` only. **Only `memory/semantic/`
+  imports `lancedb`.** No other package opens a DB connection.
+- `identity`, `paths`, `conversation_memory`, `memory_producers` are
+  dependency-free root utilities any package may import.
+
+If the change you're making needs an edge not listed above, stop and say so
+explicitly — do not add the import and do not silently work around the rule
+(e.g. re-implementing the same logic locally to avoid the import is also a
+violation of intent). This is a human/ADR decision.
+
+Every write is a `MutationEvent` built in `runtime/mutation_builders.py` and
+applied via `runtime/side_effects.finalize_mutations()` — never persist by
+calling `memory.*` write functions directly from a service or router.
+
+Run `python -m pytest apps/backend/tests/architecture/` after any import
+change — it is the fastest way to know if you crossed a boundary.

@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 
+import memory
 from runtime.mutation_builders import build_reminder_created
 from runtime.side_effects import finalize_mutations
 from services.planner.api_commands import (
@@ -8,7 +9,6 @@ from services.planner.api_commands import (
     create_reminder,
 )
 
-import memory
 from ..dependencies import RequestContext, get_request_context
 from ..schemas import (
     CreateReminderRequest,

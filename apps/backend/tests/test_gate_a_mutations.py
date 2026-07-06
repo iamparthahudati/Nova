@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import sqlite3
 import tempfile
 import unittest
 from pathlib import Path
@@ -20,7 +19,7 @@ from runtime.events import subscribe
 from runtime.mutation_builders import build_task_completed, build_task_created
 from runtime.mutation_chat import tool_calls_to_mutations, tool_mutation_succeeded
 from runtime.mutation_event import MutationEvent
-from runtime.side_effects import finalize_mutations, schedule_entity_extraction
+from runtime.side_effects import finalize_mutations
 from services.api import create_app
 
 
@@ -65,15 +64,17 @@ class MutationPipelineTestCase(unittest.TestCase):
             received.append((channel, event_type, payload))
 
         subscribe(handler)
-        publish_mutation_events([
-            MutationEvent(
-                event_type="task.created",
-                entity_type="task",
-                operation="create",
-                entity={"id": 1, "text": "A"},
-                metadata={"entity_id": 1},
-            ),
-        ])
+        publish_mutation_events(
+            [
+                MutationEvent(
+                    event_type="task.created",
+                    entity_type="task",
+                    operation="create",
+                    entity={"id": 1, "text": "A"},
+                    metadata={"entity_id": 1},
+                ),
+            ]
+        )
         self.assertEqual(received[0][1], "task.created")
         self.assertEqual(received[0][2]["entity_type"], "task")
         self.assertEqual(received[0][2]["operation"], "create")
@@ -88,13 +89,15 @@ class MutationPipelineTestCase(unittest.TestCase):
         assert completed is not None
 
         rest_event = build_task_completed(completed)
-        chat_events = tool_calls_to_mutations([
-            {
-                "name": "complete_task",
-                "args": {"text": "Parity task"},
-                "result": "Task marked done.",
-            },
-        ])
+        chat_events = tool_calls_to_mutations(
+            [
+                {
+                    "name": "complete_task",
+                    "args": {"text": "Parity task"},
+                    "result": "Task marked done.",
+                },
+            ]
+        )
         self.assertEqual(len(chat_events), 1)
         chat_event = chat_events[0]
 
@@ -117,9 +120,11 @@ class MutationPipelineTestCase(unittest.TestCase):
         assert row is not None
 
         rest_event = build_task_created(row)
-        chat_events = tool_calls_to_mutations([
-            {"name": "add_task", "args": {"text": "Other"}, "result": "Task logged."},
-        ])
+        chat_events = tool_calls_to_mutations(
+            [
+                {"name": "add_task", "args": {"text": "Other"}, "result": "Task logged."},
+            ]
+        )
 
         received: list[str] = []
 
@@ -140,12 +145,20 @@ class MutationPipelineTestCase(unittest.TestCase):
         self.assertEqual(chat_event_types, ["task.created"])
 
     def test_tool_mutation_succeeded_chat_only(self) -> None:
-        self.assertTrue(tool_mutation_succeeded(
-            "complete_task", {"text": "x"}, "Task marked done.",
-        ))
-        self.assertFalse(tool_mutation_succeeded(
-            "complete_task", {"text": "x"}, "No matching task found.",
-        ))
+        self.assertTrue(
+            tool_mutation_succeeded(
+                "complete_task",
+                {"text": "x"},
+                "Task marked done.",
+            )
+        )
+        self.assertFalse(
+            tool_mutation_succeeded(
+                "complete_task",
+                {"text": "x"},
+                "No matching task found.",
+            )
+        )
 
 
 class GateATaskApiTests(unittest.TestCase):
@@ -229,15 +242,17 @@ class GateATaskApiTests(unittest.TestCase):
     def test_websocket_delivers_mutation_event(self) -> None:
         with TestClient(create_app()) as client:
             with client.websocket_connect("/ws/events") as ws:
-                publish_mutation_events([
-                    MutationEvent(
-                        event_type="task.updated",
-                        entity_type="task",
-                        operation="complete",
-                        entity={"id": 1, "text": "x", "status": "done"},
-                        metadata={"entity_id": 1},
-                    ),
-                ])
+                publish_mutation_events(
+                    [
+                        MutationEvent(
+                            event_type="task.updated",
+                            entity_type="task",
+                            operation="complete",
+                            entity={"id": 1, "text": "x", "status": "done"},
+                            metadata={"entity_id": 1},
+                        ),
+                    ]
+                )
                 msg = json.loads(ws.receive_text())
                 self.assertEqual(msg["event"], "task.updated")
                 self.assertEqual(msg["data"]["entity_type"], "task")

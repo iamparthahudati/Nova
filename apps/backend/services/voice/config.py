@@ -8,6 +8,7 @@ calibrated for a quiet-to-moderate room at 1–3 m from the microphone.
 import os
 
 from dotenv import load_dotenv
+
 from paths import REPO_ROOT
 
 load_dotenv(REPO_ROOT / ".env")  # safe to call again if the composition root already loaded .env
@@ -62,8 +63,8 @@ MAX_WAKE_UTTERANCE_WORDS = _env_int("MAX_WAKE_UTTERANCE_WORDS", 3)
 MAX_WEAK_UTTERANCE_WORDS = _env_int("MAX_WEAK_UTTERANCE_WORDS", 2)
 
 # ── Listening / speech gate ─────────────────────────────────────────────────
-SAMPLE_RATE = 16_000          # Hz, mono — Whisper expects 16 kHz
-HOP_SECONDS = _env_float("HOP_SECONDS", 1.0)      # listener advances by this much
+SAMPLE_RATE = 16_000  # Hz, mono — Whisper expects 16 kHz
+HOP_SECONDS = _env_float("HOP_SECONDS", 1.0)  # listener advances by this much
 WINDOW_SECONDS = _env_float("WINDOW_SECONDS", 2.0)  # 2 overlapping hops per check
 
 # The speech gate decides whether a window is worth sending to Whisper.
@@ -71,16 +72,16 @@ WINDOW_SECONDS = _env_float("WINDOW_SECONDS", 2.0)  # 2 overlapping hops per che
 # window average, which dilutes a short word in 2 s of silence) against
 # max(RMS_THRESHOLD, noise_floor * NOISE_MARGIN).
 RMS_FRAME_MS = _env_int("RMS_FRAME_MS", 100)
-RMS_THRESHOLD = _env_float("RMS_THRESHOLD", 0.003)   # absolute gate floor
-NOISE_MARGIN = _env_float("NOISE_MARGIN", 2.5)       # gate = noise floor × this
-NOISE_ALPHA = _env_float("NOISE_ALPHA", 0.05)        # noise-floor EMA weight
+RMS_THRESHOLD = _env_float("RMS_THRESHOLD", 0.003)  # absolute gate floor
+NOISE_MARGIN = _env_float("NOISE_MARGIN", 2.5)  # gate = noise floor × this
+NOISE_ALPHA = _env_float("NOISE_ALPHA", 0.05)  # noise-floor EMA weight
 MAX_BACKLOG_SECONDS = _env_float("MAX_BACKLOG_SECONDS", 5.0)  # drop stale mic audio past this
 
 # ── Gain normalization ──────────────────────────────────────────────────────
 # Soft/distant speech is amplified to this peak before Whisper sees it, so
 # a normal speaking voice at 2–3 m transcribes like close-mic speech.
 GAIN_TARGET_PEAK = _env_float("GAIN_TARGET_PEAK", 0.9)
-GAIN_MAX = _env_float("GAIN_MAX", 60.0)              # cap so noise isn't blown up
+GAIN_MAX = _env_float("GAIN_MAX", 60.0)  # cap so noise isn't blown up
 
 # ── Whisper ─────────────────────────────────────────────────────────────────
 WHISPER_DEVICE = "cpu"
@@ -90,7 +91,7 @@ WHISPER_LANG = _env_str("WHISPER_LANG", "en")  # "en", "hi", "" = auto-detect
 # Use multilingual Whisper when a non-English language is configured
 WHISPER_MODEL = "base" if WHISPER_LANG not in ("en", "") else "base.en"
 
-WAKE_BEAM_SIZE = _env_int("WAKE_BEAM_SIZE", 1)       # greedy: ~2× faster polling
+WAKE_BEAM_SIZE = _env_int("WAKE_BEAM_SIZE", 1)  # greedy: ~2× faster polling
 COMMAND_BEAM_SIZE = _env_int("COMMAND_BEAM_SIZE", 5)
 # Biases Whisper's decoder toward the wake phrase. "Nova" transcribes
 # correctly even unbiased, but the bias also suppresses the "you"/"thank
@@ -109,7 +110,7 @@ COMMAND_WAIT_SECONDS = _env_float("COMMAND_WAIT_SECONDS", 5.0)
 FOLLOWUP_TIMEOUT = _env_float("FOLLOWUP_TIMEOUT", 8.0)  # wake-free follow-up window
 
 # ── TTS / cues ──────────────────────────────────────────────────────────────
-TTS_ENGINE = _env_str("TTS_ENGINE", "say")     # "say" or "piper"
+TTS_ENGINE = _env_str("TTS_ENGINE", "say")  # "say" or "piper"
 PIPER_BINARY = _env_str("PIPER_BINARY", "piper")
 PIPER_MODEL = _env_str("PIPER_MODEL", "")
 WAKE_CUE_SOUND = _env_str("WAKE_CUE_SOUND", "")  # path to .aiff/.mp3; empty = none

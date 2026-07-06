@@ -50,9 +50,13 @@ from memory import (
 
 from . import extraction_contract as contract
 from .config import (
-    ANTHROPIC_API_URL, CLAUDE_API_KEY, CLAUDE_MODEL,
-    ENTITY_EXTRACTION_ENABLED, EXTRACTION_BATCH_SIZE,
-    EXTRACTION_MAX_ATTEMPTS, EXTRACTION_MAX_BATCHES,
+    ANTHROPIC_API_URL,
+    CLAUDE_API_KEY,
+    CLAUDE_MODEL,
+    ENTITY_EXTRACTION_ENABLED,
+    EXTRACTION_BATCH_SIZE,
+    EXTRACTION_MAX_ATTEMPTS,
+    EXTRACTION_MAX_BATCHES,
 )
 
 # Output ceiling for one batch response. Sized for BATCH_SIZE memories at the
@@ -111,21 +115,23 @@ def run_entity_extraction() -> str:
     if not ENTITY_EXTRACTION_ENABLED:
         return ""
     if not _run_lock.acquire(blocking=False):
-        return ""                    # a sweep is already draining the queue
+        return ""  # a sweep is already draining the queue
     try:
         return _sweep()
     finally:
         _run_lock.release()
 
 
-def _sweep() -> str:
+def _sweep() -> str:  # noqa: C901 — DEBT(nova-ci-2): exceeds Handbook §3.1 complexity 12
     done = entities_written = links_written = failed = 0
-    seen: set[str] = set()           # never retry a failure within one run
+    seen: set[str] = set()  # never retry a failure within one run
 
     for _ in range(EXTRACTION_MAX_BATCHES):
         pending = [
-            row for row in memories_pending_entity_extraction(
-                limit=EXTRACTION_BATCH_SIZE, max_attempts=EXTRACTION_MAX_ATTEMPTS,
+            row
+            for row in memories_pending_entity_extraction(
+                limit=EXTRACTION_BATCH_SIZE,
+                max_attempts=EXTRACTION_MAX_ATTEMPTS,
             )
             if row["id"] not in seen
         ]
@@ -145,18 +151,18 @@ def _sweep() -> str:
         except Exception as exc:
             print(f"[extraction] Claude call failed: {exc}")
             failed += len(pending)
-            break                    # API trouble is systemic — stop this run
+            break  # API trouble is systemic — stop this run
 
         try:
             parsed = contract.parse_extraction(raw, list(keyed))
         except contract.ExtractionParseError as exc:
             print(f"[extraction] contract violation, batch left for retry: {exc}")
             failed += len(pending)
-            break                    # malformed envelope now likely means malformed next batch too
+            break  # malformed envelope now likely means malformed next batch too
 
         for key, row in keyed.items():
             extraction = parsed.get(key)
-            if extraction is None:   # Claude omitted the key → stays pending
+            if extraction is None:  # Claude omitted the key → stays pending
                 failed += 1
                 continue
             try:
@@ -164,7 +170,7 @@ def _sweep() -> str:
             except Exception as exc:
                 print(f"[extraction] persist failed for memory {row['id']}: {exc}")
                 failed += 1
-                continue             # left unstamped → retried next sweep
+                continue  # left unstamped → retried next sweep
             mark_entities_extracted([row["id"]])
             done += 1
             entities_written += n_entities
@@ -222,12 +228,14 @@ def _call_claude(prompt: str) -> str:
     """One un-tooled completion call. Third copy of this urllib block in Brain
     (client.py, reflection.py) — recorded as debt; extracting a shared helper
     is a refactor for its own milestone, not a side effect of this one."""
-    payload = json.dumps({
-        "model": CLAUDE_MODEL,
-        "max_tokens": _MAX_TOKENS,
-        "system": _SYSTEM,
-        "messages": [{"role": "user", "content": prompt}],
-    }).encode()
+    payload = json.dumps(
+        {
+            "model": CLAUDE_MODEL,
+            "max_tokens": _MAX_TOKENS,
+            "system": _SYSTEM,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+    ).encode()
     req = urllib.request.Request(
         ANTHROPIC_API_URL,
         data=payload,

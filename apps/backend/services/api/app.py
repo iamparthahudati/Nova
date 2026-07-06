@@ -15,14 +15,16 @@ from paths import REPO_ROOT
 from runtime.events import publish
 from services import brain, calendar
 from services.api.errors import register_exception_handlers
+from services.api.routers import calendar as calendar_router
 from services.api.routers import (
-    calendar as calendar_router,
     chat,
     graph,
     health,
     home,
     memories,
-    memory as memory_router,
+)
+from services.api.routers import memory as memory_router
+from services.api.routers import (
     products,
     reminders,
     settings,

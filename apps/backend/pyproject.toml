@@ -1,0 +1,40 @@
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+extend-exclude = '''
+/(
+  \.venv
+  | data
+  | models
+)/
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+skip = [".venv", "data", "models"]
+known_first_party = [
+    "memory",
+    "runtime",
+    "services",
+    "identity",
+    "paths",
+    "conversation_memory",
+    "memory_producers",
+]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+exclude = "(^|/)(\\.venv|data|models)/"
+# DEBT(nova-ci-1): the codebase predates type-checking in CI. Start lenient
+# (report, don't block) and ratchet strictness up package-by-package rather
+# than boiling the ocean in the PR that introduces the gate.
+check_untyped_defs = false
+disallow_untyped_defs = false
+warn_unused_ignores = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra"
