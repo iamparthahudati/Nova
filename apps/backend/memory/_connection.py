@@ -9,7 +9,11 @@ from pathlib import Path
 try:
     from paths import BACKEND_ROOT, DATA_ROOT, REPO_ROOT
 except ModuleNotFoundError:  # package-style import fallback
-    from apps.backend.paths import BACKEND_ROOT, DATA_ROOT, REPO_ROOT
+    from apps.backend.paths import (  # type: ignore[no-redef]
+        BACKEND_ROOT,
+        DATA_ROOT,
+        REPO_ROOT,
+    )
 
 DB_PATH = DATA_ROOT / "nova.db"
 LANCEDB_PATH = DATA_ROOT / "nova_lancedb"

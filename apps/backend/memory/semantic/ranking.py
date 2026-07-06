@@ -189,10 +189,10 @@ def initial_importance(source_type: str, metadata: dict | None = None) -> float:
 
     # A caller can nudge the prior via metadata without teaching this function
     # about every future source type.
-    if metadata:
+    hint = metadata.get("importance_hint") if metadata else None
+    if hint is not None:
         try:
-            override = float(metadata.get("importance_hint"))
-            base = override
+            base = float(hint)
         except (TypeError, ValueError):
             pass
     return max(0.0, min(1.0, base))

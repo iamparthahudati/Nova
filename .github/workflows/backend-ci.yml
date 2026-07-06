@@ -38,11 +38,8 @@ jobs:
       - name: flake8
         run: flake8 .
 
-      - name: mypy (report-only)
-        # DEBT(nova-ci-1): 14 pre-existing type errors as of the PR that
-        # introduced this gate (see pyproject.toml [tool.mypy]). Non-blocking
-        # until a dedicated type-hygiene pass lands; remove `|| true` then.
-        run: mypy memory runtime services *.py || true
+      - name: mypy
+        run: mypy memory runtime services *.py
 
       - name: check_limits (file/function size — Handbook §3.1)
         working-directory: .

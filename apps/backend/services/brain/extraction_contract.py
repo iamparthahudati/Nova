@@ -61,6 +61,7 @@ that is what makes the contract unit-testable in isolation.
 import json
 import re
 from dataclasses import dataclass, field
+from typing import Any
 
 from identity import ASSISTANT_NAME
 
@@ -198,7 +199,7 @@ def _valid_attributes(raw) -> dict:
     MAX_ATTRIBUTES scalar-valued string keys, drop everything else silently."""
     if not isinstance(raw, dict):
         return {}
-    kept = {}
+    kept: dict[str, Any] = {}
     for key, value in raw.items():
         if len(kept) >= MAX_ATTRIBUTES:
             break

@@ -8,6 +8,7 @@ import memory
 from services.brain import config as brain_config
 
 from .schemas import SubsystemDiagnostic, SystemStatusResponse
+from .schemas.system import SubsystemStatus
 
 
 def build_system_status(version: str = "0.1.0") -> SystemStatusResponse:
@@ -19,7 +20,7 @@ def build_system_status(version: str = "0.1.0") -> SystemStatusResponse:
     subsystems.append(_check_brain())
     subsystems.append(_check_calendar())
 
-    overall = "ok"
+    overall: SubsystemStatus = "ok"
     if any(s.status == "unavailable" for s in subsystems):
         overall = "unavailable"
     elif any(s.status == "degraded" for s in subsystems):

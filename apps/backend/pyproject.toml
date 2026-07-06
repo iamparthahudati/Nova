@@ -27,9 +27,11 @@ known_first_party = [
 python_version = "3.12"
 ignore_missing_imports = true
 exclude = "(^|/)(\\.venv|data|models)/"
-# DEBT(nova-ci-1): the codebase predates type-checking in CI. Start lenient
-# (report, don't block) and ratchet strictness up package-by-package rather
-# than boiling the ocean in the PR that introduces the gate.
+# Intentionally lenient on *unannotated* code (most function bodies predate
+# type-checking): we don't require full annotation coverage yet. But once a
+# function has a return-type annotation, mypy checks its body — that already
+# catches real bugs (see the fixes that closed DEBT(nova-ci-1)) — so this is
+# blocking in CI, not report-only.
 check_untyped_defs = false
 disallow_untyped_defs = false
 warn_unused_ignores = false

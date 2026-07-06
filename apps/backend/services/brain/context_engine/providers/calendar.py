@@ -48,7 +48,7 @@ class CalendarContextProvider(ContextProvider):
     def collect(self, request: ContextRequest) -> list[ContextItem]:
         if not CALENDAR_CONTEXT_ENABLED or _source is None:
             return []
-        events = self._events_today(request.now or datetime.now())
+        events = self._events_today(_source, request.now or datetime.now())
         return [
             ContextItem(
                 text=f"{e['title']} at {e['time']}",
@@ -58,7 +58,9 @@ class CalendarContextProvider(ContextProvider):
         ]
 
     @staticmethod
-    def _events_today(now: datetime) -> list[dict]:
+    def _events_today(
+        source: Callable[[Optional[datetime]], list[dict]], now: datetime
+    ) -> list[dict]:
         global _cache
         day_key = now.strftime("%Y-%m-%d")  # midnight rollover invalidates
         if _cache is not None:
@@ -67,6 +69,6 @@ class CalendarContextProvider(ContextProvider):
                 time.monotonic() - fetched_at < CALENDAR_CONTEXT_TTL_SECONDS
             ):
                 return events
-        events = list(_source(now))
+        events = list(source(now))
         _cache = (time.monotonic(), day_key, events)
         return events

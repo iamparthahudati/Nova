@@ -24,7 +24,7 @@ def _record(
     metadata: dict,
     importance: Optional[float] = None,
 ) -> dict:
-    record = {
+    record: dict[str, object] = {
         "text": text,
         "source_type": source_type,
         "source_id": None,

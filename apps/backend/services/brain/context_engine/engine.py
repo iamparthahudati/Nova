@@ -193,7 +193,7 @@ class ContextEngine:
         ]
 
         return AssembledContext(
-            system=format_system_prompt(sections, request.now),
+            system=format_system_prompt(sections, request.now or datetime.now()),
             memories=memories,
             messages=messages,
             sections=sections,

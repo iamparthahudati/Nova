@@ -78,14 +78,15 @@ Run, from `apps/backend/`, with the venv active:
 
 ```bash
 black --check . && isort --check-only . && flake8 . \
+  && mypy memory runtime services *.py \
   && python ../../scripts/dev/check_limits.py \
   && python -m pytest tests/ -q
 ```
 
-`mypy memory runtime services *.py` is currently report-only in CI (pre-existing
-type debt, see `pyproject.toml`'s `[tool.mypy]` comment) — run it and don't make
-the error count worse, but a clean gate today is the four commands above plus
-pytest, all green.
+All five are blocking in CI. mypy is lenient on unannotated code (most
+function bodies predate type-checking) but does check the body of any
+function that already has a return-type annotation — don't introduce a new
+error in a function that mypy is already checking.
 
 ## AI contribution rules (Handbook §11.4)
 

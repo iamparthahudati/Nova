@@ -57,6 +57,7 @@ def save_reminder(text: str, remind_date_str: str, remind_time_str: Optional[str
     # for the current time. An explicit remind_time still wins over the
     # offset's clock component ('in 3 days' + '06:00').
     moment = calendar.parse_relative(remind_date_str)
+    date_obj: Optional[datetime]
     if moment is not None:
         date_obj = moment.replace(hour=0, minute=0, second=0, microsecond=0)
         if remind_time_str is None:

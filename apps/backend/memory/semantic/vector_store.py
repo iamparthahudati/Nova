@@ -110,9 +110,8 @@ class VectorStore:
         so a clean single-step replace is exactly what we want.
         """
         db = self._connect()
-        self._table = db.create_table(
-            _TABLE_NAME, schema=_schema(self._dimensions), mode="overwrite"
-        )
+        table = db.create_table(_TABLE_NAME, schema=_schema(self._dimensions), mode="overwrite")
+        self._table = table
         if rows:
-            self._table.add(rows)
+            table.add(rows)
         return len(rows)

@@ -18,6 +18,7 @@ entity writes happen only in the extraction sweep, through Memory.
 """
 
 import re
+from typing import Optional
 
 from memory import entity_edges, find_entity, get_entity
 
@@ -67,7 +68,7 @@ class GraphContextProvider(ContextProvider):
 
         items: list[ContextItem] = []
         seen_edges: set[str] = set()  # both endpoints matched → edge once
-        entity_cache: dict[str, dict] = {e["id"]: e for e in entities}
+        entity_cache: dict[str, Optional[dict]] = {e["id"]: e for e in entities}
 
         def resolve(entity_id: str):
             if entity_id not in entity_cache:
