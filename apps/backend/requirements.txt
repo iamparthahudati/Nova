@@ -1,0 +1,13 @@
+faster-whisper
+sounddevice
+numpy
+python-dotenv
+fastapi
+uvicorn[standard]
+
+# Phase 2, Milestone 2.1 — Semantic Memory (memory/semantic/)
+# vector_store.py relies on create_table(exist_ok=) and
+# drop_table(ignore_missing=); verified against 0.33.
+lancedb>=0.33
+fastembed
+pyarrow

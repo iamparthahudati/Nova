@@ -1,0 +1,1 @@
+"""Release automation placeholder script."""

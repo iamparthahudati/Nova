@@ -1,5 +1,11 @@
 .env
-rai.db
+data/nova.db
+data/nova_lancedb/
+data/logs/
+data/backups/
+data/cache/
+models/**/*
+!models/**/.gitkeep
 __pycache__/
 *.py[cod]
 *.log
