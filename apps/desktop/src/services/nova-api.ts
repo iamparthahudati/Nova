@@ -26,7 +26,9 @@ import type {
   ReminderMutationResponse,
   RemindersResponse,
   RewardLedgerResponse,
+  RewardProgramDetailResponse,
   RewardProgramsResponse,
+  RewardsOverviewResponse,
   SettingsResponse,
   SpendingMutationResponse,
   SpendingResponse,
@@ -60,6 +62,8 @@ import {
   mapMerchant,
   mapRewardLedger,
   mapRewardProgram,
+  mapRewardProgramDetail,
+  mapRewardsOverview,
   mapStatementList,
   mapTransactionsPage,
 } from '@/mappers/finance'
@@ -94,6 +98,8 @@ import type {
   FinanceStatement,
   RewardLedger,
   RewardProgram,
+  RewardProgramDetail,
+  RewardsOverview,
   TransactionsPage,
 } from '@/view-models/finance'
 
@@ -289,9 +295,19 @@ export async function deleteTransactionRaw(transactionId: number): Promise<Trans
   return apiDelete<TransactionMutationResponse>(`/finance/transactions/${transactionId}`)
 }
 
+export async function fetchRewardsOverview(): Promise<RewardsOverview> {
+  const response = await apiGet<RewardsOverviewResponse>('/finance/rewards/overview')
+  return mapRewardsOverview(response)
+}
+
 export async function fetchRewardPrograms(accountId?: number): Promise<RewardProgram[]> {
   const response = await apiGet<RewardProgramsResponse>('/finance/rewards/programs', { account_id: accountId })
   return response.programs.map(mapRewardProgram)
+}
+
+export async function fetchRewardProgramDetail(programId: number): Promise<RewardProgramDetail> {
+  const response = await apiGet<RewardProgramDetailResponse>(`/finance/rewards/programs/${programId}`)
+  return mapRewardProgramDetail(response)
 }
 
 export async function fetchRewardLedger(programId: number, limit = 50, offset = 0): Promise<RewardLedger> {

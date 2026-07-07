@@ -5,16 +5,26 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, Query
 
 from services.planner import finance_queries as finance_q
+from services.planner import finance_rewards_queries as rewards_q
 
 from ...dependencies import RequestContext, get_request_context
 from ...schemas.finance import (
     CashbackSummaryResponse,
     RewardLedgerResponse,
+    RewardProgramDetailResponse,
     RewardProgramResponse,
     RewardProgramsResponse,
+    RewardsOverviewResponse,
 )
 
 router = APIRouter()
+
+
+@router.get("/rewards/overview", response_model=RewardsOverviewResponse)
+def get_rewards_overview(
+    _ctx: RequestContext = Depends(get_request_context),
+) -> RewardsOverviewResponse:
+    return RewardsOverviewResponse(**rewards_q.get_rewards_overview())
 
 
 @router.get("/rewards/programs", response_model=RewardProgramsResponse)
@@ -22,8 +32,16 @@ def list_reward_programs(
     account_id: int | None = Query(None),
     _ctx: RequestContext = Depends(get_request_context),
 ) -> RewardProgramsResponse:
-    rows = finance_q.list_reward_programs(account_id)
+    rows = rewards_q.list_reward_programs(account_id)
     return RewardProgramsResponse(programs=[RewardProgramResponse(**row) for row in rows])
+
+
+@router.get("/rewards/programs/{program_id}", response_model=RewardProgramDetailResponse)
+def get_reward_program_detail(
+    program_id: int,
+    _ctx: RequestContext = Depends(get_request_context),
+) -> RewardProgramDetailResponse:
+    return RewardProgramDetailResponse(**rewards_q.get_reward_program_detail(program_id))
 
 
 @router.get("/rewards/programs/{program_id}/ledger", response_model=RewardLedgerResponse)
@@ -33,7 +51,7 @@ def get_reward_ledger(
     offset: int = Query(0, ge=0),
     _ctx: RequestContext = Depends(get_request_context),
 ) -> RewardLedgerResponse:
-    return RewardLedgerResponse(**finance_q.get_reward_ledger(program_id, limit, offset))
+    return RewardLedgerResponse(**rewards_q.get_reward_ledger(program_id, limit, offset))
 
 
 @router.get("/cashback", response_model=CashbackSummaryResponse)

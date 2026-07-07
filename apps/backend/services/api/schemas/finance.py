@@ -333,10 +333,28 @@ class RewardProgramResponse(BaseModel):
     created_at: str
     updated_at: str
     balance: Optional[dict[str, Any]] = None
+    account_name: Optional[str] = None
+    bank_name: Optional[str] = None
+    status: Optional[str] = None
 
 
 class RewardProgramsResponse(BaseModel):
     programs: list[RewardProgramResponse]
+
+
+class RewardsOverviewResponse(BaseModel):
+    total_balance: int
+    total_balance_cashback_minor: int
+    total_balance_cashback: float
+    earned_month: int
+    earned_year: int
+    earned_lifetime: int
+    earned_month_cashback_minor: int
+    earned_year_cashback_minor: int
+    earned_lifetime_cashback_minor: int
+    earned_month_cashback: float
+    earned_year_cashback: float
+    earned_lifetime_cashback: float
 
 
 class RewardLedgerResponse(BaseModel):
@@ -344,6 +362,22 @@ class RewardLedgerResponse(BaseModel):
     balance: dict[str, Any]
     events: list[dict[str, Any]]
     yearly_earned: int
+    monthly_earned: int
+    lifetime_earned: int
+
+
+class RewardProgramDetailResponse(BaseModel):
+    program: RewardProgramResponse
+    balance: dict[str, Any]
+    status: str
+    account_name: str
+    bank_name: str
+    earned_month: int
+    earned_year: int
+    earned_lifetime: int
+    monthly_history: list[dict[str, Any]]
+    recent_events: list[dict[str, Any]]
+    related_transactions: list[dict[str, Any]]
 
 
 class CashbackRuleResponse(BaseModel):

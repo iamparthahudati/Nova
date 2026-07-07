@@ -596,10 +596,28 @@ export interface RewardProgramResponse {
   created_at: string
   updated_at: string
   balance?: Record<string, unknown> | null
+  account_name?: string | null
+  bank_name?: string | null
+  status?: string | null
 }
 
 export interface RewardProgramsResponse {
   programs: RewardProgramResponse[]
+}
+
+export interface RewardsOverviewResponse {
+  total_balance: number
+  total_balance_cashback_minor: number
+  total_balance_cashback: number
+  earned_month: number
+  earned_year: number
+  earned_lifetime: number
+  earned_month_cashback_minor: number
+  earned_year_cashback_minor: number
+  earned_lifetime_cashback_minor: number
+  earned_month_cashback: number
+  earned_year_cashback: number
+  earned_lifetime_cashback: number
 }
 
 export interface RewardLedgerResponse {
@@ -607,6 +625,22 @@ export interface RewardLedgerResponse {
   balance: Record<string, unknown>
   events: Array<Record<string, unknown>>
   yearly_earned: number
+  monthly_earned: number
+  lifetime_earned: number
+}
+
+export interface RewardProgramDetailResponse {
+  program: RewardProgramResponse
+  balance: Record<string, unknown>
+  status: string
+  account_name: string
+  bank_name: string
+  earned_month: number
+  earned_year: number
+  earned_lifetime: number
+  monthly_history: Array<Record<string, unknown>>
+  recent_events: Array<Record<string, unknown>>
+  related_transactions: Array<Record<string, unknown>>
 }
 
 export interface CashbackRuleResponse {

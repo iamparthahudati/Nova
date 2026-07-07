@@ -19,6 +19,8 @@ import type {
   FinanceTransaction,
   RewardLedger,
   RewardProgram,
+  RewardProgramDetail,
+  RewardsOverview,
   TransactionsPage,
 } from '@/view-models/finance'
 import {
@@ -655,18 +657,162 @@ export async function getFinanceTransactions(params?: {
   }
 }
 
-export async function getRewardPrograms(): Promise<RewardProgram[]> {
-  await latency()
-  return []
-}
+const mockRewardPrograms: RewardProgram[] = [
+  {
+    id: 1,
+    accountId: 101,
+    name: 'Reward Points',
+    unit: 'points',
+    earnRateNote: '5x on dining, 2x on travel',
+    expiryNote: 'Points expire after 24 months',
+    accountName: 'HDFC Millennia',
+    bankName: 'HDFC Millennia',
+    status: 'expiring',
+    balance: {
+      programId: 1,
+      unit: 'points',
+      balance: 12450,
+      totalEarned: 18200,
+      totalRedeemed: 4200,
+      totalExpired: 1550,
+    },
+  },
+  {
+    id: 2,
+    accountId: 102,
+    name: 'CashPoints',
+    unit: 'cashback_minor',
+    earnRateNote: '1% on all spends',
+    expiryNote: null,
+    accountName: 'ICICI Amazon Pay',
+    bankName: 'ICICI Amazon Pay',
+    status: 'active',
+    balance: {
+      programId: 2,
+      unit: 'cashback_minor',
+      balance: 245000,
+      totalEarned: 310000,
+      totalRedeemed: 65000,
+      totalExpired: 0,
+    },
+  },
+]
 
-export async function getRewardLedger(_programId: number): Promise<RewardLedger> {
+const mockRewardEvents = [
+  {
+    id: 1,
+    programId: 1,
+    kind: 'earned',
+    direction: 'credit',
+    amount: 1200,
+    note: 'Dining spend',
+    occurredOn: '2026-07-05',
+    transactionId: 501,
+  },
+  {
+    id: 2,
+    programId: 1,
+    kind: 'redeemed',
+    direction: 'debit',
+    amount: 800,
+    note: 'Amazon voucher',
+    occurredOn: '2026-07-03',
+    transactionId: null,
+  },
+  {
+    id: 3,
+    programId: 1,
+    kind: 'earned',
+    direction: 'credit',
+    amount: 2400,
+    note: 'Travel booking',
+    occurredOn: '2026-06-28',
+    transactionId: 502,
+  },
+  {
+    id: 4,
+    programId: 1,
+    kind: 'expired',
+    direction: 'debit',
+    amount: 500,
+    note: 'Annual expiry sweep',
+    occurredOn: '2026-06-15',
+    transactionId: null,
+  },
+]
+
+export async function getRewardsOverview(): Promise<RewardsOverview> {
   await latency()
   return {
-    program: { id: 1, accountId: 1, name: 'Mock', unit: 'points' },
-    balance: { programId: 1, unit: 'points', balance: 0, totalEarned: 0, totalRedeemed: 0, totalExpired: 0 },
-    events: [],
-    yearlyEarned: 0,
+    totalBalance: 12450,
+    totalBalanceCashbackMinor: 245000,
+    totalBalanceCashback: 2450,
+    earnedMonth: 3200,
+    earnedYear: 12450,
+    earnedLifetime: 18200,
+    earnedMonthCashbackMinor: 18500,
+    earnedYearCashbackMinor: 245000,
+    earnedLifetimeCashbackMinor: 310000,
+    earnedMonthCashback: 185,
+    earnedYearCashback: 2450,
+    earnedLifetimeCashback: 3100,
+  }
+}
+
+export async function getRewardPrograms(): Promise<RewardProgram[]> {
+  await latency()
+  return mockRewardPrograms
+}
+
+export async function getRewardProgramDetail(programId: number): Promise<RewardProgramDetail> {
+  await latency()
+  const program = mockRewardPrograms.find((row) => row.id === programId) ?? mockRewardPrograms[0]
+  return {
+    program,
+    balance: program.balance!,
+    status: program.status ?? 'active',
+    accountName: program.accountName ?? 'Credit card',
+    bankName: program.bankName ?? 'Credit card',
+    earnedMonth: 3200,
+    earnedYear: 12450,
+    earnedLifetime: program.balance?.totalEarned ?? 0,
+    monthlyHistory: [
+      { month: '2026-07', earned: 1200, redeemed: 800, expired: 0, adjusted: 0 },
+      { month: '2026-06', earned: 2400, redeemed: 0, expired: 500, adjusted: 0 },
+      { month: '2026-05', earned: 1800, redeemed: 1200, expired: 0, adjusted: 0 },
+      { month: '2026-04', earned: 900, redeemed: 0, expired: 0, adjusted: 0 },
+      { month: '2026-03', earned: 1500, redeemed: 400, expired: 0, adjusted: 0 },
+      { month: '2026-02', earned: 600, redeemed: 0, expired: 1050, adjusted: 0 },
+    ],
+    recentEvents: mockRewardEvents,
+    relatedTransactions: [
+      {
+        id: 501,
+        accountId: 101,
+        direction: 'debit',
+        kind: 'expense',
+        amount: 2400,
+        amountMinor: 240000,
+        note: 'Dining spend',
+        occurredOn: '2026-07-05',
+        accountName: 'HDFC Millennia',
+        categoryName: 'Dining',
+        merchantName: 'Truffles',
+      },
+    ],
+  }
+}
+
+export async function getRewardLedger(programId: number): Promise<RewardLedger> {
+  await latency()
+  const program = mockRewardPrograms.find((row) => row.id === programId) ?? mockRewardPrograms[0]
+  return {
+    program,
+    balance: program.balance!,
+    events: mockRewardEvents.filter((event) => event.programId === program.id),
+    yearlyEarned: 12450,
+    monthlyEarned: 3200,
+    lifetimeEarned: program.balance?.totalEarned ?? 0,
   }
 }
 

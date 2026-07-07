@@ -125,6 +125,10 @@ export interface RewardProgram {
   name: string
   unit: string
   earnRateNote?: string | null
+  expiryNote?: string | null
+  accountName?: string | null
+  bankName?: string | null
+  status?: string | null
   balance?: RewardBalance | null
 }
 
@@ -142,6 +146,8 @@ export interface RewardLedger {
   balance: RewardBalance
   events: RewardEvent[]
   yearlyEarned: number
+  monthlyEarned: number
+  lifetimeEarned: number
 }
 
 export interface RewardEvent {
@@ -152,6 +158,44 @@ export interface RewardEvent {
   amount: number
   note?: string | null
   occurredOn: string
+  transactionId?: number | null
+}
+
+export interface RewardsOverview {
+  totalBalance: number
+  totalBalanceCashbackMinor: number
+  totalBalanceCashback: number
+  earnedMonth: number
+  earnedYear: number
+  earnedLifetime: number
+  earnedMonthCashbackMinor: number
+  earnedYearCashbackMinor: number
+  earnedLifetimeCashbackMinor: number
+  earnedMonthCashback: number
+  earnedYearCashback: number
+  earnedLifetimeCashback: number
+}
+
+export interface RewardMonthlyHistory {
+  month: string
+  earned: number
+  redeemed: number
+  expired: number
+  adjusted: number
+}
+
+export interface RewardProgramDetail {
+  program: RewardProgram
+  balance: RewardBalance
+  status: string
+  accountName: string
+  bankName: string
+  earnedMonth: number
+  earnedYear: number
+  earnedLifetime: number
+  monthlyHistory: RewardMonthlyHistory[]
+  recentEvents: RewardEvent[]
+  relatedTransactions: FinanceTransaction[]
 }
 
 export interface CashbackRule {

@@ -90,8 +90,12 @@ export const dataSource = {
     isMockMode() ? mockApi.getStatement(statementId) : novaApi.fetchStatement(statementId),
   getFinanceTransactions: (params?: Parameters<typeof novaApi.fetchFinanceTransactions>[0]) =>
     isMockMode() ? mockApi.getFinanceTransactions() : novaApi.fetchFinanceTransactions(params),
+  getRewardsOverview: () =>
+    isMockMode() ? mockApi.getRewardsOverview() : novaApi.fetchRewardsOverview(),
   getRewardPrograms: (accountId?: number) =>
     isMockMode() ? mockApi.getRewardPrograms() : novaApi.fetchRewardPrograms(accountId),
+  getRewardProgramDetail: (programId: number) =>
+    isMockMode() ? mockApi.getRewardProgramDetail(programId) : novaApi.fetchRewardProgramDetail(programId),
   getRewardLedger: (programId: number) =>
     isMockMode() ? mockApi.getRewardLedger(programId) : novaApi.fetchRewardLedger(programId),
   getCashbackSummary: () => (isMockMode() ? mockApi.getCashbackSummary() : novaApi.fetchCashbackSummary()),

@@ -291,3 +291,31 @@ class RewardsFoundationTestCase(unittest.TestCase):
         self.assertEqual(len(summaries), 1)
         self.assertEqual(summaries[0]["balance"], 2500)
         self.assertEqual(summaries[0]["program_id"], program.id)
+
+    def test_rewards_overview_projection(self) -> None:
+        card = self._create_card()
+        program = self.programs.create_program(card.id, "Points", "points")
+        self.events.create_earned_event(program.id, 1200, "2026-07-01", today=self.today)
+        self.events.create_earned_event(program.id, 800, "2026-06-15", today=self.today)
+
+        overview = self.projections.build_overview(self.today)
+        self.assertEqual(overview["total_balance"], 2000)
+        self.assertEqual(overview["earned_month"], 1200)
+        self.assertEqual(overview["earned_lifetime"], 2000)
+
+    def test_program_detail_projection(self) -> None:
+        card = self._create_card()
+        program = self.programs.create_program(
+            card.id,
+            "Points",
+            "points",
+            expiry_note="Expires annually",
+        )
+        self.events.create_earned_event(program.id, 5000, "2026-07-02", today=self.today)
+
+        detail = self.projections.build_program_detail(program.id, self.today)
+        self.assertEqual(detail["status"], "expiring")
+        self.assertEqual(detail["earned_month"], 5000)
+        self.assertEqual(len(detail["monthly_history"]), 6)
+        self.assertEqual(detail["monthly_history"][0]["month"], "2026-07")
+        self.assertEqual(detail["monthly_history"][0]["earned"], 5000)
