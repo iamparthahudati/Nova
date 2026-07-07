@@ -400,9 +400,60 @@ class CashbackRuleResponse(BaseModel):
     created_at: str
     updated_at: str
     program_name: Optional[str] = None
+    account_name: Optional[str] = None
+    card_name: Optional[str] = None
+    earned_month_minor: Optional[int] = None
+    earned_month: Optional[float] = None
+    remaining_cap_minor: Optional[int] = None
+    remaining_cap: Optional[float] = None
+    status: Optional[str] = None
+    excluded_category_names: list[str] = Field(default_factory=list)
+    excluded_merchant_names: list[str] = Field(default_factory=list)
 
 
 class CashbackSummaryResponse(BaseModel):
+    total_balance_minor: int
+    total_balance: float
     monthly_earned_minor: int
     monthly_earned: float
+    earned_year_minor: int
+    earned_year: float
+    earned_lifetime_minor: int
+    earned_lifetime: float
+    remaining_monthly_cap_minor: Optional[int] = None
+    remaining_monthly_cap: Optional[float] = None
+    active_rules_count: int
     rules: list[CashbackRuleResponse]
+
+
+class CashbackActivityEventResponse(BaseModel):
+    id: int
+    program_id: int
+    program_name: str
+    rule_id: Optional[int] = None
+    rule_name: Optional[str] = None
+    transaction_id: Optional[int] = None
+    transaction_note: Optional[str] = None
+    amount_minor: int
+    amount: float
+    occurred_on: str
+    note: Optional[str] = None
+
+
+class CashbackActivityResponse(BaseModel):
+    events: list[CashbackActivityEventResponse]
+
+
+class CashbackRuleDetailResponse(BaseModel):
+    rule: CashbackRuleResponse
+    program_name: str
+    account_name: str
+    card_name: str
+    earned_month: int
+    earned_year: int
+    earned_lifetime: int
+    monthly_history: list[dict[str, Any]]
+    recent_events: list[dict[str, Any]]
+    related_transactions: list[dict[str, Any]]
+    remaining_cap_minor: Optional[int] = None
+    remaining_cap: Optional[float] = None

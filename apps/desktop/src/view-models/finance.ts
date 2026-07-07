@@ -201,18 +201,71 @@ export interface RewardProgramDetail {
 export interface CashbackRule {
   id: number
   programId: number
+  accountId?: number | null
   name: string
   flatRatePercent: number
+  flatRateBps: number
   categoryMultipliers: Record<number, number>
   merchantMultipliers: Record<number, number>
+  excludedCategoryIds: number[]
+  excludedMerchantIds: number[]
+  excludedMccCodes: string[]
+  excludedTransactionKinds: string[]
   monthlyCap?: number | null
   minimumSpend: number
   programName?: string | null
+  accountName?: string | null
+  cardName?: string | null
+  earnedMonth?: number | null
+  remainingCap?: number | null
+  status?: string | null
+  excludedCategoryNames: string[]
+  excludedMerchantNames: string[]
 }
 
 export interface CashbackSummary {
+  totalBalance: number
   monthlyEarned: number
+  earnedYear: number
+  earnedLifetime: number
+  remainingMonthlyCap?: number | null
+  activeRulesCount: number
   rules: CashbackRule[]
+}
+
+export interface CashbackActivityEvent {
+  id: number
+  programId: number
+  programName: string
+  ruleId?: number | null
+  ruleName?: string | null
+  transactionId?: number | null
+  transactionNote?: string | null
+  amount: number
+  occurredOn: string
+  note?: string | null
+}
+
+export interface CashbackMonthlyHistory {
+  month: string
+  earned: number
+  redeemed: number
+  expired: number
+  adjusted: number
+}
+
+export interface CashbackRuleDetail {
+  rule: CashbackRule
+  programName: string
+  accountName: string
+  cardName: string
+  earnedMonth: number
+  earnedYear: number
+  earnedLifetime: number
+  monthlyHistory: CashbackMonthlyHistory[]
+  recentEvents: RewardEvent[]
+  relatedTransactions: FinanceTransaction[]
+  remainingCap?: number | null
 }
 
 export interface TransactionsPage {

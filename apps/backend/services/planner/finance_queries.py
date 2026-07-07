@@ -5,8 +5,6 @@ from __future__ import annotations
 from datetime import date
 from typing import Optional
 
-from domains.finance.cashback import CashbackRuleService
-from domains.finance.cashback.projections import month_bounds
 from domains.finance.rewards import RewardProgramService, RewardProjectionService
 from domains.finance.services.account_service import AccountService
 from domains.finance.services.category_service import CategoryService
@@ -19,7 +17,6 @@ from domains.finance.value_objects import Classification
 
 from .finance_serializers import (
     serialize_account,
-    serialize_cashback_rule,
     serialize_credit_card,
     serialize_statement,
     serialize_transaction,
@@ -34,7 +31,6 @@ _transactions = TransactionService()
 _projections = ProjectionService()
 _reward_programs = RewardProgramService()
 _reward_projections = RewardProjectionService()
-_cashback_rules = CashbackRuleService()
 
 
 def _account_names() -> dict[int, str]:
@@ -144,6 +140,8 @@ def _compute_asset_liability_totals(balances: list[dict]) -> tuple[int, int]:
 
 
 def _compute_cashback_month_minor(today: date) -> int:
+    from domains.finance.cashback.projections import month_bounds
+
     cashback_month_minor = 0
     month_start_bound, month_end_bound = month_bounds(today.isoformat())
     for program in _reward_programs.list_programs():
@@ -379,41 +377,3 @@ def serialize_entity(entity) -> dict:
     from .finance_serializers import serialize_entity as _serialize
 
     return _serialize(entity)
-
-
-def list_cashback_rules(program_id: Optional[int] = None) -> list[dict]:
-    if program_id is not None:
-        return [
-            serialize_cashback_rule(rule)
-            for rule in _cashback_rules.list_rules_for_program(program_id)
-        ]
-    rows = []
-    for program in _reward_programs.list_programs():
-        if program.unit != "cashback_minor":
-            continue
-        for rule in _cashback_rules.list_rules_for_program(program.id):
-            row = serialize_cashback_rule(rule)
-            row["program_name"] = program.name
-            row["account_id"] = program.account_id
-            rows.append(row)
-    return rows
-
-
-def get_cashback_summary(today: Optional[date] = None) -> dict:
-    today = today or date.today()
-    month_start, month_end = month_bounds(today.isoformat())
-    rules = list_cashback_rules()
-    monthly_earned_minor = 0
-    for program in _reward_programs.list_programs():
-        if program.unit != "cashback_minor":
-            continue
-        monthly_earned_minor += _reward_projections.compute_yearly_earned(
-            program.id,
-            month_start,
-            month_end,
-        )
-    return {
-        "monthly_earned_minor": monthly_earned_minor,
-        "monthly_earned": monthly_earned_minor / 100.0,
-        "rules": rules,
-    }

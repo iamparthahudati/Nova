@@ -11,6 +11,8 @@ import type {
   Task,
 } from '@/view-models'
 import type {
+  CashbackActivityEvent,
+  CashbackRuleDetail,
   CashbackSummary,
   FinanceAccount,
   FinanceCreditCard,
@@ -816,9 +818,125 @@ export async function getRewardLedger(programId: number): Promise<RewardLedger> 
   }
 }
 
+const mockCashbackRules: CashbackSummary['rules'] = [
+  {
+    id: 1,
+    programId: 2,
+    accountId: 102,
+    name: 'Flat 1% on all spends',
+    flatRatePercent: 1,
+    flatRateBps: 100,
+    categoryMultipliers: { 3: 500 },
+    merchantMultipliers: {},
+    excludedCategoryIds: [],
+    excludedMerchantIds: [],
+    excludedMccCodes: [],
+    excludedTransactionKinds: [],
+    monthlyCap: 500,
+    minimumSpend: 100,
+    programName: 'CashPoints',
+    accountName: 'ICICI Amazon Pay',
+    cardName: 'ICICI Amazon Pay',
+    earnedMonth: 185,
+    remainingCap: 315,
+    status: 'active',
+    excludedCategoryNames: [],
+    excludedMerchantNames: [],
+  },
+  {
+    id: 2,
+    programId: 2,
+    accountId: 102,
+    name: '5% on dining',
+    flatRatePercent: 5,
+    flatRateBps: 500,
+    categoryMultipliers: {},
+    merchantMultipliers: {},
+    excludedCategoryIds: [9],
+    excludedMerchantIds: [],
+    excludedMccCodes: [],
+    excludedTransactionKinds: ['fee'],
+    monthlyCap: 250,
+    minimumSpend: 0,
+    programName: 'CashPoints',
+    accountName: 'ICICI Amazon Pay',
+    cardName: 'ICICI Amazon Pay',
+    earnedMonth: 250,
+    remainingCap: 0,
+    status: 'capped',
+    excludedCategoryNames: ['Rent'],
+    excludedMerchantNames: [],
+  },
+]
+
+const mockCashbackActivity: CashbackActivityEvent[] = [
+  {
+    id: 901,
+    programId: 2,
+    programName: 'CashPoints',
+    ruleId: 1,
+    ruleName: 'Flat 1% on all spends',
+    transactionId: 501,
+    transactionNote: 'Amazon order',
+    amount: 45,
+    occurredOn: '2026-07-06',
+    note: 'cashback rule 1',
+  },
+  {
+    id: 902,
+    programId: 2,
+    programName: 'CashPoints',
+    ruleId: 2,
+    ruleName: '5% on dining',
+    transactionId: 502,
+    transactionNote: 'Dinner at Social',
+    amount: 120,
+    occurredOn: '2026-07-05',
+    note: 'cashback rule 2',
+  },
+]
+
 export async function getCashbackSummary(): Promise<CashbackSummary> {
   await latency()
-  return { monthlyEarned: 0, rules: [] }
+  return {
+    totalBalance: 2450,
+    monthlyEarned: 435,
+    earnedYear: 2450,
+    earnedLifetime: 3100,
+    remainingMonthlyCap: 315,
+    activeRulesCount: mockCashbackRules.length,
+    rules: mockCashbackRules,
+  }
+}
+
+export async function getCashbackActivity(): Promise<CashbackActivityEvent[]> {
+  await latency()
+  return mockCashbackActivity
+}
+
+export async function getCashbackRuleDetail(ruleId: number): Promise<CashbackRuleDetail> {
+  await latency()
+  const rule = mockCashbackRules.find((row) => row.id === ruleId) ?? mockCashbackRules[0]
+  return {
+    rule,
+    programName: rule.programName ?? 'CashPoints',
+    accountName: rule.accountName ?? 'ICICI Amazon Pay',
+    cardName: rule.cardName ?? 'ICICI Amazon Pay',
+    earnedMonth: rule.earnedMonth ?? 0,
+    earnedYear: 2450,
+    earnedLifetime: 3100,
+    remainingCap: rule.remainingCap,
+    monthlyHistory: [
+      { month: '2026-07', earned: rule.earnedMonth ?? 0, redeemed: 0, expired: 0, adjusted: 0 },
+      { month: '2026-06', earned: 380, redeemed: 0, expired: 0, adjusted: 0 },
+      { month: '2026-05', earned: 290, redeemed: 0, expired: 0, adjusted: 0 },
+      { month: '2026-04', earned: 410, redeemed: 0, expired: 0, adjusted: 0 },
+      { month: '2026-03', earned: 320, redeemed: 0, expired: 0, adjusted: 0 },
+      { month: '2026-02', earned: 275, redeemed: 0, expired: 0, adjusted: 0 },
+    ],
+    recentEvents: mockRewardEvents.filter((event) => event.programId === rule.programId),
+    relatedTransactions: mockTransactions.slice(0, 2),
+  }
 }
 
 export async function createAccount(input: { name: string; account_type: string; opening_balance?: number }) {

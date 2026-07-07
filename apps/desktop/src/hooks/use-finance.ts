@@ -102,6 +102,21 @@ export function useCashbackSummary() {
   })
 }
 
+export function useCashbackActivity() {
+  return useQuery({
+    queryKey: queryKeys.finance.cashbackActivity(),
+    queryFn: () => dataSource.getCashbackActivity(),
+  })
+}
+
+export function useCashbackRuleDetail(ruleId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.finance.cashbackDetail(ruleId ?? 0),
+    queryFn: () => dataSource.getCashbackRuleDetail(ruleId!),
+    enabled: ruleId !== null,
+  })
+}
+
 export function useCategories() {
   return useQuery({
     queryKey: queryKeys.finance.categories(),

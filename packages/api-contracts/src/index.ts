@@ -663,12 +663,69 @@ export interface CashbackRuleResponse {
   created_at: string
   updated_at: string
   program_name?: string | null
+  account_name?: string | null
+  card_name?: string | null
+  earned_month_minor?: number | null
+  earned_month?: number | null
+  remaining_cap_minor?: number | null
+  remaining_cap?: number | null
+  status?: string | null
+  excluded_category_names?: string[]
+  excluded_merchant_names?: string[]
 }
 
 export interface CashbackSummaryResponse {
+  total_balance_minor: number
+  total_balance: number
   monthly_earned_minor: number
   monthly_earned: number
+  earned_year_minor: number
+  earned_year: number
+  earned_lifetime_minor: number
+  earned_lifetime: number
+  remaining_monthly_cap_minor?: number | null
+  remaining_monthly_cap?: number | null
+  active_rules_count: number
   rules: CashbackRuleResponse[]
+}
+
+export interface CashbackActivityEventResponse {
+  id: number
+  program_id: number
+  program_name: string
+  rule_id?: number | null
+  rule_name?: string | null
+  transaction_id?: number | null
+  transaction_note?: string | null
+  amount_minor: number
+  amount: number
+  occurred_on: string
+  note?: string | null
+}
+
+export interface CashbackActivityResponse {
+  events: CashbackActivityEventResponse[]
+}
+
+export interface CashbackRuleDetailResponse {
+  rule: CashbackRuleResponse
+  program_name: string
+  account_name: string
+  card_name: string
+  earned_month: number
+  earned_year: number
+  earned_lifetime: number
+  monthly_history: Array<{
+    month: string
+    earned: number
+    redeemed: number
+    expired: number
+    adjusted: number
+  }>
+  recent_events: Array<Record<string, unknown>>
+  related_transactions: TransactionResponse[]
+  remaining_cap_minor?: number | null
+  remaining_cap?: number | null
 }
 
 /** WebSocket envelope: { event: string, data: Record<string, unknown> } */

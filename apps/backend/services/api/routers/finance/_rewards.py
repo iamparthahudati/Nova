@@ -4,12 +4,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Query
 
-from services.planner import finance_queries as finance_q
 from services.planner import finance_rewards_queries as rewards_q
 
 from ...dependencies import RequestContext, get_request_context
 from ...schemas.finance import (
-    CashbackSummaryResponse,
     RewardLedgerResponse,
     RewardProgramDetailResponse,
     RewardProgramResponse,
@@ -52,10 +50,3 @@ def get_reward_ledger(
     _ctx: RequestContext = Depends(get_request_context),
 ) -> RewardLedgerResponse:
     return RewardLedgerResponse(**rewards_q.get_reward_ledger(program_id, limit, offset))
-
-
-@router.get("/cashback", response_model=CashbackSummaryResponse)
-def get_cashback_summary(
-    _ctx: RequestContext = Depends(get_request_context),
-) -> CashbackSummaryResponse:
-    return CashbackSummaryResponse(**finance_q.get_cashback_summary())

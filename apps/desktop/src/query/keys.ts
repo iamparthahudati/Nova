@@ -36,6 +36,8 @@ export const queryKeys = {
     rewardDetail: (programId: number) => [...queryKeys.all, 'finance', 'rewards', programId, 'detail'] as const,
     rewardLedger: (programId: number) => [...queryKeys.all, 'finance', 'rewards', programId, 'ledger'] as const,
     cashback: () => [...queryKeys.all, 'finance', 'cashback'] as const,
+    cashbackDetail: (ruleId: number) => [...queryKeys.all, 'finance', 'cashback', ruleId, 'detail'] as const,
+    cashbackActivity: () => [...queryKeys.all, 'finance', 'cashback', 'activity'] as const,
     categories: () => [...queryKeys.all, 'finance', 'categories'] as const,
     merchants: () => [...queryKeys.all, 'finance', 'merchants'] as const,
   },

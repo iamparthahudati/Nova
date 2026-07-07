@@ -14,6 +14,7 @@ const financeInvalidations = [
   queryKeys.finance.rewards(),
   queryKeys.finance.rewardsOverview(),
   queryKeys.finance.cashback(),
+  queryKeys.finance.cashbackActivity(),
   queryKeys.home(),
 ]
 

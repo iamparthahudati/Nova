@@ -1,5 +1,7 @@
 import type {
   AccountResponse,
+  CashbackActivityResponse,
+  CashbackRuleDetailResponse,
   CashbackRuleResponse,
   CashbackSummaryResponse,
   CreditCardResponse,
@@ -13,7 +15,9 @@ import type {
   TransactionsResponse,
 } from '@nova/api-contracts'
 import type {
+  CashbackActivityEvent,
   CashbackRule,
+  CashbackRuleDetail,
   CashbackSummary,
   FinanceAccount,
   FinanceCreditCard,
@@ -295,20 +299,86 @@ export function mapCashbackRule(row: CashbackRuleResponse): CashbackRule {
   return {
     id: row.id,
     programId: row.program_id,
+    accountId: row.account_id,
     name: row.name,
     flatRatePercent: row.flat_rate_percent,
+    flatRateBps: row.flat_rate_bps,
     categoryMultipliers: row.category_multipliers,
     merchantMultipliers: row.merchant_multipliers,
+    excludedCategoryIds: row.excluded_category_ids,
+    excludedMerchantIds: row.excluded_merchant_ids,
+    excludedMccCodes: row.excluded_mcc_codes,
+    excludedTransactionKinds: row.excluded_transaction_kinds,
     monthlyCap: row.monthly_cap,
     minimumSpend: row.minimum_spend,
     programName: row.program_name,
+    accountName: row.account_name,
+    cardName: row.card_name,
+    earnedMonth: row.earned_month,
+    remainingCap: row.remaining_cap,
+    status: row.status,
+    excludedCategoryNames: row.excluded_category_names ?? [],
+    excludedMerchantNames: row.excluded_merchant_names ?? [],
   }
 }
 
 export function mapCashbackSummary(response: CashbackSummaryResponse): CashbackSummary {
   return {
+    totalBalance: response.total_balance,
     monthlyEarned: response.monthly_earned,
+    earnedYear: response.earned_year,
+    earnedLifetime: response.earned_lifetime,
+    remainingMonthlyCap: response.remaining_monthly_cap,
+    activeRulesCount: response.active_rules_count,
     rules: response.rules.map(mapCashbackRule),
+  }
+}
+
+export function mapCashbackActivity(response: CashbackActivityResponse): CashbackActivityEvent[] {
+  return response.events.map((event) => ({
+    id: event.id,
+    programId: event.program_id,
+    programName: event.program_name,
+    ruleId: event.rule_id,
+    ruleName: event.rule_name,
+    transactionId: event.transaction_id,
+    transactionNote: event.transaction_note,
+    amount: event.amount,
+    occurredOn: event.occurred_on,
+    note: event.note,
+  }))
+}
+
+export function mapCashbackRuleDetail(response: CashbackRuleDetailResponse): CashbackRuleDetail {
+  return {
+    rule: mapCashbackRule(response.rule),
+    programName: response.program_name,
+    accountName: response.account_name,
+    cardName: response.card_name,
+    earnedMonth: response.earned_month / 100,
+    earnedYear: response.earned_year / 100,
+    earnedLifetime: response.earned_lifetime / 100,
+    monthlyHistory: response.monthly_history.map((row) => ({
+      month: row.month,
+      earned: row.earned / 100,
+      redeemed: row.redeemed / 100,
+      expired: row.expired / 100,
+      adjusted: row.adjusted / 100,
+    })),
+    recentEvents: response.recent_events.map((event) => ({
+      id: event.id as number,
+      programId: event.program_id as number,
+      kind: event.kind as string,
+      direction: event.direction as string,
+      amount: event.amount as number,
+      note: event.note as string | null,
+      occurredOn: event.occurred_on as string,
+      transactionId: event.transaction_id as number | null,
+    })),
+    relatedTransactions: response.related_transactions.map((txn) =>
+      mapTransaction(txn as unknown as TransactionResponse),
+    ),
+    remainingCap: response.remaining_cap,
   }
 }
 

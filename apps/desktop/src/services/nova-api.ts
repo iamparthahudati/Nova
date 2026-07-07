@@ -2,6 +2,8 @@ import type {
   AccountMutationResponse,
   AccountsResponse,
   CalendarResponse,
+  CashbackActivityResponse,
+  CashbackRuleDetailResponse,
   CashbackSummaryResponse,
   CategoriesResponse,
   CategoryMutationResponse,
@@ -55,6 +57,8 @@ import { apiDelete, apiGet, apiPatch, apiPost } from '@/lib/api-client'
 import { mapCalendar } from '@/mappers/calendar'
 import {
   mapAccount,
+  mapCashbackActivity,
+  mapCashbackRuleDetail,
   mapCashbackSummary,
   mapCategory,
   mapCreditCard,
@@ -89,6 +93,8 @@ import type {
   Task,
 } from '@/view-models'
 import type {
+  CashbackActivityEvent,
+  CashbackRuleDetail,
   CashbackSummary,
   FinanceAccount,
   FinanceCategory,
@@ -321,6 +327,16 @@ export async function fetchRewardLedger(programId: number, limit = 50, offset = 
 export async function fetchCashbackSummary(): Promise<CashbackSummary> {
   const response = await apiGet<CashbackSummaryResponse>('/finance/cashback')
   return mapCashbackSummary(response)
+}
+
+export async function fetchCashbackActivity(limit = 50, offset = 0): Promise<CashbackActivityEvent[]> {
+  const response = await apiGet<CashbackActivityResponse>('/finance/cashback/activity', { limit, offset })
+  return mapCashbackActivity(response)
+}
+
+export async function fetchCashbackRuleDetail(ruleId: number): Promise<CashbackRuleDetail> {
+  const response = await apiGet<CashbackRuleDetailResponse>(`/finance/cashback/rules/${ruleId}`)
+  return mapCashbackRuleDetail(response)
 }
 
 export async function fetchCategories(): Promise<FinanceCategory[]> {

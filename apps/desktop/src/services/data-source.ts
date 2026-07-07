@@ -99,6 +99,9 @@ export const dataSource = {
   getRewardLedger: (programId: number) =>
     isMockMode() ? mockApi.getRewardLedger(programId) : novaApi.fetchRewardLedger(programId),
   getCashbackSummary: () => (isMockMode() ? mockApi.getCashbackSummary() : novaApi.fetchCashbackSummary()),
+  getCashbackActivity: () => (isMockMode() ? mockApi.getCashbackActivity() : novaApi.fetchCashbackActivity()),
+  getCashbackRuleDetail: (ruleId: number) =>
+    isMockMode() ? mockApi.getCashbackRuleDetail(ruleId) : novaApi.fetchCashbackRuleDetail(ruleId),
   getCategories: () => (isMockMode() ? mockApi.getCategories() : novaApi.fetchCategories()),
   getMerchants: () => (isMockMode() ? mockApi.getMerchants() : novaApi.fetchMerchants()),
   createAccount: async (input: CreateAccountRequest) => {

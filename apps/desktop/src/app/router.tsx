@@ -4,6 +4,7 @@ import { FinanceLayout } from '@/components/finance/finance-layout'
 import { CalendarScreen } from '@/screens/calendar-screen'
 import { ChatScreen } from '@/screens/chat-screen'
 import { FinanceAccountsScreen } from '@/screens/finance/finance-accounts-screen'
+import { FinanceCashbackDetailScreen } from '@/screens/finance/finance-cashback-detail-screen'
 import { FinanceCashbackScreen } from '@/screens/finance/finance-cashback-screen'
 import { FinanceCategoriesScreen } from '@/screens/finance/finance-categories-screen'
 import { FinanceCreditCardDetailScreen } from '@/screens/finance/finance-credit-card-detail-screen'
@@ -51,6 +52,7 @@ export const router = createHashRouter([
           { path: 'rewards', element: <FinanceRewardsScreen /> },
           { path: 'rewards/:programId', element: <FinanceRewardDetailScreen /> },
           { path: 'cashback', element: <FinanceCashbackScreen /> },
+          { path: 'cashback/:ruleId', element: <FinanceCashbackDetailScreen /> },
           { path: 'investments', element: <FinanceInvestmentsScreen /> },
         ],
       },
