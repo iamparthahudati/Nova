@@ -14,7 +14,7 @@ product, or plans — it links to the document that owns them. If this file and 
 owned document disagree, **the owned document wins** and this file is stale — fix it.
 
 > **Status:** Living · **Owner:** Program lead · **Last updated:** 2026-07-07
-> **Current phase:** WorkOS implementation — Phase 0 (Infrastructure & governance)
+> **Current phase:** WorkOS implementation — Phase 1 (Capture + Commitment ledger + Brief) backend landed
 > **How this file is kept honest:** [§27 Maintenance Contract](#27-maintenance-contract)
 
 ### How to read this in under 10 minutes
@@ -39,13 +39,13 @@ owned document disagree, **the owned document wins** and this file is stale — 
 |---|---|
 | **Current program** | WorkOS (Nova's second full domain) |
 | **Current domain** | `domains/work` + `memory/work` |
-| **Current phase** | Phase 0 — Infrastructure & governance |
-| **Current sprint** | Green-light: money VO, scaffolds, governance tests, dependency edges |
-| **Current PR / work unit** | Phase 0 landing on `develop` (uncommitted working tree) |
+| **Current phase** | Phase 1 — Capture + Commitment ledger + Morning Brief shell (backend landed) |
+| **Current sprint** | WOS-1: five-table Commitment/Capture spine, deterministic PriorityQueue + Brief, REST + planner parity layer (chat/voice-ready) |
+| **Current PR / work unit** | WOS-1 backend on `develop` |
 | **Current blocker** | None |
-| **Next PR / work unit** | Register WorkOS edges in `test_dependencies.py`; commit Phase 0; CI green |
-| **Next milestone** | **Phase 1** — Capture + Commitment ledger spine + Morning Brief shell |
-| **Current success metric** | Phase 0 gate: architecture tests pass, no derived columns, MutationEvent shape untouched, CI green |
+| **Next PR / work unit** | WOS-1 desktop slice (Work section, Capture ⌘N, Today lens, invalidation-map) |
+| **Next milestone** | **Phase 2** — Delivery graph (Products, Releases, Projects, WorkItem tree) |
+| **Current success metric** | Phase 1 gate: architecture tests pass, no derived columns, real-SQLite tests, CI green |
 
 Full detail → [§13 Current Sprint](#13-current-sprint).
 
@@ -55,18 +55,19 @@ Full detail → [§13 Current Sprint](#13-current-sprint).
 
 | | |
 |---|---|
-| **Current phase** | WorkOS implementation — **Phase 0: Infrastructure & governance** |
+| **Current phase** | WorkOS implementation — **Phase 1: Capture + Commitment ledger + Brief (backend landed)** |
 | **Design status** | ✅ Frozen — architecture, data, execution, product, UI/UX all complete |
 | **Finance domain** | ✅ Complete — first fully-built domain (backend + API + desktop + planner) |
 | **WorkOS design** | ✅ Frozen — 6 specs + 3 ADRs + 5 implementation companions |
-| **Current sprint** | Phase 0 — money VO promoted, `memory/work` + `domains/work` scaffolds, governance tests, dependency edges |
-| **Current milestone** | Green-light WorkOS: boundaries, `Money` type, `owner_id` scope, mutation vocabulary settled |
-| **Next milestone** | **Phase 1** — Capture + Commitment ledger spine + Morning Brief shell |
-| **Overall** | Design **100%** · Finance **100%** · WorkOS build **~5%** (Phase 0 of 11 landing) |
+| **Current sprint** | WOS-1 — five-table spine, memory writers, ports/adapters, domain services, deterministic PriorityQueue + Brief, REST + chat parity |
+| **Current milestone** | WOS-1 backend: capture → triage → promote; Commitment ledger; Morning Brief v0 |
+| **Next milestone** | **Phase 2** — Delivery graph (Products, Releases, Projects, WorkItem tree) |
+| **Overall** | Design **100%** · Finance **100%** · WorkOS build **~13%** (Phase 1 backend of 11 landed) |
 
 **One-line status:** The architecture and product are frozen; Finance shipped as the
-proving domain; WorkOS design is complete and its foundation (Phase 0) is landing on
-`develop` — the next unit of work is Phase 1 capture + brief.
+proving domain; WorkOS Phase 0 is committed and Phase 1's backend (capture, Commitment
+ledger, deterministic Brief) has landed — the next unit of work is the WOS-1 desktop
+slice, then Phase 2's delivery graph.
 
 ---
 
@@ -77,11 +78,12 @@ Architecture & ADRs      ██████████ 100%   frozen, 24/24 acc
 Product & UX design      ██████████ 100%   Build Bible + 6 WorkOS specs frozen
 Finance domain           ██████████ 100%   backend + API + desktop + planner
 WorkOS design            ██████████ 100%   specs + ADRs + companions
-WorkOS implementation    █░░░░░░░░░  ~5%    Phase 0 of 11 landing
-  ├─ Phase 0 infra       ████████░░  ~80%   scaffolds done; edges + CI remain
-  └─ Phases 1–10         ░░░░░░░░░░   0%    not started
-Testing (WorkOS)         █░░░░░░░░░  ~10%   governance/scaffold tests only
-Desktop UI (WorkOS)      ░░░░░░░░░░   0%    starts Phase 1
+WorkOS implementation    ██░░░░░░░░  ~13%   Phase 1 backend of 11 landed
+  ├─ Phase 0 infra       ██████████  100%   committed (edges, money VO, governance)
+  ├─ Phase 1 backend     ██████████  100%   spine + services + PriorityQueue + Brief + REST/planner parity
+  └─ Phases 2–10         ░░░░░░░░░░   0%    not started
+Testing (WorkOS)         ████░░░░░░  ~35%   governance + memory + pure + API/parity (29 tests)
+Desktop UI (WorkOS)      ░░░░░░░░░░   0%    WOS-1 desktop slice pending
 ```
 
 *Finance carries full test + desktop coverage; the bars above track the **WorkOS**
@@ -102,11 +104,11 @@ program, which is the active work.*
 | WorkOS companion docs | 6 | [docs/workos/](workos/) |
 | Product/program domains | **2** built-or-active (Finance ✅, WorkOS 🔨) | [§7 Domain Status Board](#7-domain-status-board) |
 | Backend services | **7** (api, automation, brain, calendar, knowledge, planner, voice) | [apps/backend/services/](../apps/backend/services/) |
-| Backend test files | 17 | [apps/backend/tests/](../apps/backend/tests/) |
-| Test functions (approx) | ~145 | `grep def test_` |
+| Backend test files | 19 | [apps/backend/tests/](../apps/backend/tests/) |
+| Test functions (approx) | ~174 | `grep def test_` |
 | Coverage gate | Not gated — CI enforces black/isort/flake8/mypy/check_limits/pytest | [CLAUDE.md](../CLAUDE.md) |
-| Current active phase | WorkOS **Phase 0** | [§13 Current Sprint](#13-current-sprint) |
-| Completed phases | Nova Core M0–M4 + Finance domain · WorkOS: 0 complete (Phase 0 in progress) | [§11 Completed Milestones](#11-completed-milestones) |
+| Current active phase | WorkOS **Phase 1** (backend landed) | [§13 Current Sprint](#13-current-sprint) |
+| Completed phases | Nova Core M0–M4 + Finance domain · WorkOS: Phase 0 done, Phase 1 backend landed | [§11 Completed Milestones](#11-completed-milestones) |
 
 ---
 
@@ -257,8 +259,8 @@ Chronological path to today. `[x]` = complete, `[ ]` = not started, `[>]` = acti
 [x] Finance domain built                  → first full domain (backend+API+desktop)
 [x] WorkOS design frozen                  → 6 specs + ADRs 0021–0023
 [x] WorkOS implementation plan            → workos/IMPLEMENTATION_PLAN.md
-[>] Phase 0  Infrastructure & governance  ← WE ARE HERE (landing on develop)
-[ ] Phase 1  Capture + Commitment + Brief
+[x] Phase 0  Infrastructure & governance  → committed (ab11bf3)
+[>] Phase 1  Capture + Commitment + Brief ← WE ARE HERE (backend landed; desktop slice pending)
 [ ] Phase 2  Delivery graph (Products & Projects)
 [ ] Phase 3  Time ledger + Execution
 [ ] Phase 4  Planning & Decision Engine
@@ -295,7 +297,8 @@ Project history, most recent last. Every line here is done and verified.
 ✓ WorkOS design frozen (Product, Architecture, Data, Execution, Experience, UI/UX)
 ✓ WorkOS ADRs accepted (0021 core · 0022 two-ledger · 0023 derived state)
 ✓ WorkOS implementation companions authored (Plan, Governance, Risks, Boundaries, DB)
-◐ WorkOS Phase 0 — infrastructure & governance (landing)
+✓ WorkOS Phase 0 — infrastructure & governance (committed)
+◐ WorkOS Phase 1 — Capture + Commitment ledger + Morning Brief shell (backend landed; desktop slice pending)
 ```
 
 Detailed history is in git; the frozen decisions are in [§15 ADR Status](#15-adr-status).
@@ -310,8 +313,8 @@ Full detail per phase → [workos/IMPLEMENTATION_PLAN.md](workos/IMPLEMENTATION_
 
 | Phase | Delivers | Status | Depends on | Detail |
 |---|---|:---:|---|---|
-| **0** | Boundaries, `Money` VO, `owner_id`, scaffolds, governance tests | 🔨 In progress | — | [Plan §0](workos/IMPLEMENTATION_PLAN.md) |
-| **1** | Capture → triage → promote; Commitment ledger spine; Morning Brief v0 | ⬜ Planned | 0 | [Plan §1](workos/IMPLEMENTATION_PLAN.md) |
+| **0** | Boundaries, `Money` VO, `owner_id`, scaffolds, governance tests | ✅ Done | — | [Plan §0](workos/IMPLEMENTATION_PLAN.md) |
+| **1** | Capture → triage → promote; Commitment ledger spine; Morning Brief v0 | 🔨 Backend done | 0 | [Plan §1](workos/IMPLEMENTATION_PLAN.md) |
 | **2** | Delivery graph: Products, Releases, Projects, WorkItem tree | ⬜ Planned | 1 | [Plan §2](workos/IMPLEMENTATION_PLAN.md) |
 | **3** | Time ledger: TimeEntry, FocusSession, capacity & allocation | ⬜ Planned | 2 | [Plan §3](workos/IMPLEMENTATION_PLAN.md) |
 | **4** | Planning & Decision Engine: prioritization, estimation | ⬜ Planned | 2 (3) | [Plan §4](workos/IMPLEMENTATION_PLAN.md) |
@@ -334,34 +337,34 @@ the Core roadmap in [NOVA_IMPLEMENTATION_ROADMAP_v1.md](NOVA_IMPLEMENTATION_ROAD
 
 > **This section changes most often. Replace it wholesale each sprint.**
 
-### WorkOS Phase 0 — Infrastructure & governance
+### WorkOS Phase 1 — Capture + Commitment ledger + Morning Brief shell (WOS-1)
 
-**Objective:** Green-light WorkOS. No feature code until boundaries, money type,
-owner scope, and mutation vocabulary are settled — retrofitting any of these after
-WOS-1 data exists is the highest-cost mistake ([IMPLEMENTATION_RISKS](workos/IMPLEMENTATION_RISKS.md)).
+**Objective:** *"Dump a thought; see today's decision."* Frictionless capture feeds a
+derived priority list; Morning Brief v0 proves derivation works before time or clients
+exist. Backend spine only — the desktop slice lands next.
 
-**Done:**
-- [x] ADRs 0021–0023 accepted ([adr/](adr/README.md))
-- [x] `Money` value object promoted to root utility ([apps/backend/money.py](../apps/backend/money.py)) — both domains import, neither imports the other
-- [x] `memory/work/` scaffold — idempotent migrations + governance verifier ([migrations.py](../apps/backend/memory/work/migrations.py))
-- [x] `domains/work/` scaffold — value objects, errors, validation
-- [x] Forbidden-derived-column guard + `owner_id` reservation on all `work_*` DDL
-- [x] Governance tests — MutationEvent shape frozen, `entity_type` additive, entity registry ([test_workos_governance.py](../apps/backend/tests/architecture/test_workos_governance.py))
-- [x] WorkOS governance doc registered ([IMPLEMENTATION_GOVERNANCE.md](workos/IMPLEMENTATION_GOVERNANCE.md))
+**Done (backend):**
+- [x] Five-table spine — `work_notes`, `work_projects`, `work_items`, `work_action_items`, `work_priority_policies` ([migrate_work_phase1](../apps/backend/memory/work/migrations.py)); FK-ordered, idempotent, index bundle, seeded default policy
+- [x] Memory writers (sole persistence) with optimistic concurrency + atomic composite triage/promote transactions
+- [x] Domain layer — aggregates, repository ports + SQLite adapters, `CaptureService`, `PromotionService`, `ProjectService`, `WorkItemService`, `PriorityPolicyService`
+- [x] Pure deterministic `build_priority_queue` (deadline + decay only) and `build_briefing_shell` — no stored scores, injected clock
+- [x] `MutationEvent` builders ([domains/work/mutations.py](../apps/backend/domains/work/mutations.py)) — `work.<entity>.<operation>`, composite promotion event
+- [x] Planner parity layer (`work_commands`, `work_queries`, `work_serializers`) + REST routers (`services/api/routers/work/`)
+- [x] 29 real-SQLite tests — governance/DDL, idempotency, concurrency, promotion, prioritization, briefing, mutation shape, chat/REST parity
+- [x] Event contract appended to [DESKTOP_WRITE_OPERATIONS.md](architecture/DESKTOP_WRITE_OPERATIONS.md) §10
 
-**Remaining:**
-- [ ] Register WorkOS dependency edges in `tests/architecture/test_dependencies.py`
-- [ ] Land Phase 0 changes off `develop` (currently uncommitted working tree)
-- [ ] Full CI green: black, isort, flake8, mypy, check_limits, pytest, architecture tests
+**Remaining (WOS-1 desktop slice):**
+- [ ] Work section shell, Capture (⌘N), Today lens, capture inbox, read-only priority list, Morning Brief v0
+- [ ] `EventsWebSocketEvent` `work.*` union in `@nova/api-contracts` + `invalidation-map.ts` + `queryKeys.work`
+- [ ] Deferred: memory producers for `work.project.created/completed` (durable facts) — follow-up, not a gate
 
 **Blocked:** none.
 
 **Exit criteria** (from [IMPLEMENTATION_GOVERNANCE.md](workos/IMPLEMENTATION_GOVERNANCE.md)):
-architecture tests pass · no derived columns in migrations · MutationEvent shape
-untouched · real-SQLite tests · CI green. The team can then implement Phase 1
-without architecture meetings.
+architecture tests pass · no derived columns · MutationEvent shape untouched ·
+real-SQLite tests · chat/voice parity · CI green — all met for the backend gate.
 
-**Links:** [Plan §0](workos/IMPLEMENTATION_PLAN.md) · [Governance](workos/IMPLEMENTATION_GOVERNANCE.md) · [Risks](workos/IMPLEMENTATION_RISKS.md) · [Module boundaries](workos/MODULE_BOUNDARIES.md)
+**Links:** [Plan §1](workos/IMPLEMENTATION_PLAN.md) · [Schema gate](workos/WORKOS_PHASE1_SCHEMA.md) · [Governance](workos/IMPLEMENTATION_GOVERNANCE.md) · [Risks](workos/IMPLEMENTATION_RISKS.md)
 
 ---
 
@@ -369,9 +372,10 @@ without architecture meetings.
 
 High-level only — do not duplicate the [Implementation Plan](workos/IMPLEMENTATION_PLAN.md).
 
-- **Phase 1 — Capture + Commitment ledger + Brief.** *"Dump a thought; see today's
-  decision."* Frictionless capture feeds a derived priority list; Morning Brief v0
-  proves derivation works before time or clients exist.
+- **WOS-1 desktop slice (finishes Phase 1).** *"Dump a thought; see today's
+  decision."* Backend spine is landed; remaining work is the Work section shell,
+  Capture (⌘N), Today lens, capture inbox, read-only priority list, Morning Brief v0,
+  and the `work.*` `invalidation-map.ts` / `queryKeys.work` contract.
 - **Phase 2 — Delivery graph.** Products, Releases, Projects, full WorkItem tree with
   dependency cycle validation. Portfolio structure before ROI can be attributed.
 - **Phase 3 — Time ledger.** Effortless time capture; capacity-aware planning;
@@ -441,7 +445,10 @@ Major program decisions. Details live in the linked ADR/doc — this is the ledg
 | 2026-07-06 | WorkOS core architecture accepted | Single domain package, bounded contexts | [0021](adr/0021-workos-core-architecture.md) | ✅ |
 | 2026-07-06 | Two-ledger model (Commitment + Time) | Separate intent from spent hours | [0022](adr/0022-workos-two-ledger-architecture.md) | ✅ |
 | 2026-07-06 | Derived state is never stored | Priority/health/ROI rebuildable, not persisted | [0023](adr/0023-workos-derived-state.md) | ✅ |
-| 2026-07-07 | Phase 0 governance-first | Settle boundaries & money type before any WOS-1 data | [Plan §0](workos/IMPLEMENTATION_PLAN.md) | 🔨 |
+| 2026-07-07 | Phase 0 governance-first | Settle boundaries & money type before any WOS-1 data | [Plan §0](workos/IMPLEMENTATION_PLAN.md) | ✅ |
+| 2026-07-07 | WOS-1 backend landed | Five-table Commitment/Capture spine + deterministic Brief; parity + real-SQLite green | [Schema gate](workos/WORKOS_PHASE1_SCHEMA.md) | ✅ |
+| 2026-07-07 | Planner passes events opaquely | Keep `services.planner` off the `runtime` edge; `domains/work` owns builders | [Boundaries](workos/MODULE_BOUNDARIES.md) | ✅ |
+| 2026-07-07 | Desktop slice + memory producers deferred | WOS-1 backend is independently valuable; UI/producers land next per schema §14 | [DWO §10](architecture/DESKTOP_WRITE_OPERATIONS.md) | 🔨 |
 
 ---
 
@@ -453,7 +460,8 @@ and (where they touch a frozen boundary) an ADR before work proceeds.
 | Decision area | The open question | Owner / doc | Status |
 |---|---|---|---|
 | **Architecture** | None pending — architecture is frozen | Architect / [adr/](adr/README.md) | ✅ Settled |
-| **Schema** | WOS-1 capture tables (`work_notes`, `work_action_items`) | [WORKOS_PHASE1_SCHEMA.md](workos/WORKOS_PHASE1_SCHEMA.md) | 🔨 Next (Phase 1) |
+| **Schema** | WOS-1 capture + commitment tables | [WORKOS_PHASE1_SCHEMA.md](workos/WORKOS_PHASE1_SCHEMA.md) | ✅ Implemented (backend) |
+| **Desktop** | WOS-1 Work section + `work.*` invalidation contract | [WORKOS_UI_UX](NOVA_WORKOS_UI_UX_SPECIFICATION_v1.md) | 🔨 Next (WOS-1 desktop slice) |
 | **Product** | Pricing / monetization model | — (no owning doc yet) | ⬜ Open, unscheduled |
 | **Business** | Cloud sync & hosting model (breaks local-first default?) | — (would need an ADR) | ⬜ Open, unscheduled |
 | **Research** | AI Chief of Staff — propose/explain/commit design | [Plan §9](workos/IMPLEMENTATION_PLAN.md) | ⬜ Deferred → Phase 9 |

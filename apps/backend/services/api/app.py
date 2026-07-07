@@ -33,6 +33,7 @@ from services.api.routers import (
     system,
     tasks,
 )
+from services.api.routers import work as work_router
 from services.api.websocket import hub
 
 load_dotenv(REPO_ROOT / ".env")
@@ -79,6 +80,7 @@ def create_app() -> FastAPI:
     app.include_router(graph.router)
     app.include_router(spending.router)
     app.include_router(finance.router)
+    app.include_router(work_router.router)
     app.include_router(products.router)
     app.include_router(settings.router)
     app.include_router(home.router)

@@ -41,14 +41,17 @@ rewrite, MutationEvent shape surprises.
 
 **Theme:** "Dump a thought; see today's decision."
 
-| Backend | Desktop |
-|---|---|
-| `work_notes`, `work_action_items` tables + Workspace services | Work section shell + Capture (⌘N) |
-| Minimal `work_projects`, `work_items` (task type only) | Today lens (static layout) |
-| Capture → triage → promote orchestration | Capture inbox |
-| `PriorityPolicy` default + deterministic PriorityQueue (deadline + decay only) | Priority list (read-only) |
-| Insights: Briefing assembler (deterministic numbers, no Brain yet) | Morning Brief v0 |
-| `work_commands` capture/promote verbs + parity tests | queryKeys.work scaffold |
+**Status:** 🔨 Backend landed (WOS-1); desktop slice pending.
+
+| Backend | Status | Desktop | Status |
+|---|---|---|---|
+| `work_notes`, `work_action_items` tables + Workspace services | ✅ | Work section shell + Capture (⌘N) | ⬜ |
+| Minimal `work_projects`, `work_items` (task type only) | ✅ | Today lens (static layout) | ⬜ |
+| Capture → triage → promote orchestration (atomic) | ✅ | Capture inbox | ⬜ |
+| `PriorityPolicy` default + deterministic PriorityQueue (deadline + decay only) | ✅ | Priority list (read-only) | ⬜ |
+| Insights: Briefing assembler (deterministic numbers, no Brain yet) | ✅ | Morning Brief v0 | ⬜ |
+| `work_commands` capture/promote verbs + parity tests | ✅ | queryKeys.work scaffold | ⬜ |
+| REST routers (`services/api/routers/work/`) + 29 real-SQLite tests | ✅ | `invalidation-map.ts` `work.*` union | ⬜ |
 
 **Why now:** The product's wedge is the 30-second decision. Capture feeds the
 Commitment ledger; Brief proves derivation works before time tracking or clients.

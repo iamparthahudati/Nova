@@ -46,3 +46,61 @@ class LedgerKind(str, Enum):
     TIME = "time"
     HOLDING = "holding"
     ARTIFACT = "artifact"
+
+
+class CaptureSource(str, Enum):
+    MANUAL = "manual"
+    CHAT = "chat"
+    VOICE = "voice"
+
+
+class NoteStatus(str, Enum):
+    CAPTURED = "captured"
+    TRIAGED = "triaged"
+    ARCHIVED = "archived"
+
+
+class TriageOutcomeKind(str, Enum):
+    WORK_ITEM = "work_item"
+    NOTE = "note"
+    DISMISSED = "dismissed"
+
+
+class ActionItemStatus(str, Enum):
+    OPEN = "open"
+    PROMOTED = "promoted"
+    DISMISSED = "dismissed"
+
+
+class ProjectStatus(str, Enum):
+    IDEA = "idea"
+    PLANNED = "planned"
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+
+
+class WorkItemStatus(str, Enum):
+    BACKLOG = "backlog"
+    TODO = "todo"
+    IN_PROGRESS = "in_progress"
+    IN_REVIEW = "in_review"
+    DONE = "done"
+    CANCELLED = "cancelled"
+
+
+class EstimateConfidence(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
+
+
+class DeadlineHardness(str, Enum):
+    HARD = "hard"
+    SOFT = "soft"
+
+
+# Terminal statuses excluded from the open-commitment / PriorityQueue set.
+CLOSED_WORK_ITEM_STATUSES: frozenset[str] = frozenset(
+    {WorkItemStatus.DONE.value, WorkItemStatus.CANCELLED.value},
+)

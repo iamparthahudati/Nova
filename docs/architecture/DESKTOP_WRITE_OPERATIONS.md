@@ -218,3 +218,41 @@ Only translators differ.
 - [x] Chat parity tests pass
 - [x] REST task endpoints + tests pass
 - [x] `conversation.py` refactored to use shared pipeline
+
+---
+
+## 10. WorkOS events (WOS-1 — Phase 1)
+
+WorkOS follows the identical pipeline. Builders live in `domains/work/mutations.py`
+(the domain owns them; `services.planner` passes events through opaquely so it stays
+off the `runtime` edge). Event names are `work.<entity>.<operation>`; `entity` is the
+full aggregate snapshot; `metadata` carries routing ids only (`entity_id`,
+`owner_id`, and `project_id` where relevant).
+
+| `event_type` | entity_type | operation | Memory producer |
+|---|---|---|---|
+| `work.note.captured` | `note` | `capture` | No |
+| `work.note.triaged` | `note` | `triage` | No |
+| `work.actionitem.created` | `action_item` | `create` | No |
+| `work.actionitem.promoted` | `action_item` | `promote` | No (composite: carries both `action_item` + `work_item`) |
+| `work.actionitem.dismissed` | `action_item` | `dismiss` | No |
+| `work.project.created` | `project` | `create` | Deferred (durable fact — WOS-1 emits event only) |
+| `work.project.updated` | `project` | `update` | No |
+| `work.project.archived` | `project` | `archive` | No |
+| `work.project.completed` | `project` | `complete` | Deferred (milestone — WOS-1 emits event only) |
+| `work.item.created` | `work_item` | `create` | No |
+| `work.item.updated` | `work_item` | `update` | No |
+| `work.item.transitioned` | `work_item` | `transition` | No |
+| `work.item.completed` | `work_item` | `complete` | No |
+| `work.item.cancelled` | `work_item` | `cancel` | No |
+| `work.item.deleted` | `work_item` | `delete` | No |
+| `work.priority.reweighted` | `priority_policy` | `reweight` | No |
+
+**Deferred in WOS-1 (not scope creep — tracked):**
+- Memory producers for `work.project.created` / `work.project.completed`. The schema
+  marks these as durable facts, but `memory_from_mutation` is already an over-length
+  DEBT(nova-ci-2) function and no §13 test gates producer output; adding branches is a
+  follow-up, not a Phase 1 exit criterion.
+- Desktop `invalidation-map.ts` entries + Work section UI. Per WORKOS_PHASE1_SCHEMA
+  §14 these land with the WOS-1 desktop slice; `EventsWebSocketEvent` must first carry
+  the `work.*` union in `@nova/api-contracts`.
