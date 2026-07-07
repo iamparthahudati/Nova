@@ -23,6 +23,14 @@ export function useCreditCards() {
   })
 }
 
+export function useCreditCard(accountId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.finance.creditCard(accountId ?? 0),
+    queryFn: () => dataSource.getCreditCard(accountId!),
+    enabled: accountId !== null,
+  })
+}
+
 export function useStatements(accountId: number | null, limit = 24) {
   return useQuery({
     queryKey: queryKeys.finance.statements({ accountId: accountId ?? 0, limit }),

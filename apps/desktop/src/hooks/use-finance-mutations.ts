@@ -4,6 +4,7 @@ import type {
   CreateCategoryRequest,
   CreateCreditCardRequest,
   CreateMerchantRequest,
+  CreateCardPaymentRequest,
   CreateTransactionRequest,
   CreateTransferRequest,
   PayStatementRequest,
@@ -144,6 +145,14 @@ export function useDeleteMerchant() {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (merchantId: number) => dataSource.deleteMerchant(merchantId),
+    onSuccess: () => invalidateFinance(queryClient),
+  })
+}
+
+export function useCreateCardPayment() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: CreateCardPaymentRequest) => dataSource.createCardPayment(input),
     onSuccess: () => invalidateFinance(queryClient),
   })
 }

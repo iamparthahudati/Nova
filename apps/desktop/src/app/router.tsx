@@ -6,6 +6,7 @@ import { ChatScreen } from '@/screens/chat-screen'
 import { FinanceAccountsScreen } from '@/screens/finance/finance-accounts-screen'
 import { FinanceCashbackScreen } from '@/screens/finance/finance-cashback-screen'
 import { FinanceCategoriesScreen } from '@/screens/finance/finance-categories-screen'
+import { FinanceCreditCardDetailScreen } from '@/screens/finance/finance-credit-card-detail-screen'
 import { FinanceCreditCardsScreen } from '@/screens/finance/finance-credit-cards-screen'
 import { FinanceDashboardScreen } from '@/screens/finance/finance-dashboard-screen'
 import { FinanceInvestmentsScreen } from '@/screens/finance/finance-investments-screen'
@@ -39,6 +40,7 @@ export const router = createHashRouter([
           { index: true, element: <FinanceDashboardScreen /> },
           { path: 'accounts', element: <FinanceAccountsScreen /> },
           { path: 'credit-cards', element: <FinanceCreditCardsScreen /> },
+          { path: 'credit-cards/:accountId', element: <FinanceCreditCardDetailScreen /> },
           { path: 'categories', element: <FinanceCategoriesScreen /> },
           { path: 'merchants', element: <FinanceMerchantsScreen /> },
           { path: 'transactions', element: <FinanceTransactionsScreen /> },

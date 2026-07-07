@@ -6,6 +6,7 @@ import type {
   CreateReminderRequest,
   CreateTaskRequest,
   CreateTransactionRequest,
+  CreateCardPaymentRequest,
   CreateTransferRequest,
   LogSpendingRequest,
   PayStatementRequest,
@@ -81,6 +82,8 @@ export const dataSource = {
   getAccounts: (includeArchived?: boolean) =>
     isMockMode() ? mockApi.getAccounts() : novaApi.fetchAccounts(includeArchived),
   getCreditCards: () => (isMockMode() ? mockApi.getCreditCards() : novaApi.fetchCreditCards()),
+  getCreditCard: (accountId: number) =>
+    isMockMode() ? mockApi.getCreditCard(accountId) : novaApi.fetchCreditCard(accountId),
   getStatements: (accountId: number, limit?: number) =>
     isMockMode() ? mockApi.getStatements(accountId) : novaApi.fetchStatements(accountId, limit),
   getFinanceTransactions: (params?: Parameters<typeof novaApi.fetchFinanceTransactions>[0]) =>
@@ -178,6 +181,12 @@ export const dataSource = {
   },
   createTransfer: async (input: CreateTransferRequest) => {
     const response = isMockMode() ? await mockApi.createTransfer(input) : await novaApi.createTransferRaw(input)
+    return { meta: response.meta }
+  },
+  createCardPayment: async (input: CreateCardPaymentRequest) => {
+    const response = isMockMode()
+      ? await mockApi.createCardPayment(input)
+      : await novaApi.createCardPaymentRaw(input)
     return { meta: response.meta }
   },
   payStatement: async (statementId: number, input: PayStatementRequest) => {

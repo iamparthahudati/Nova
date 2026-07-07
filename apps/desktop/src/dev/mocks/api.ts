@@ -92,6 +92,92 @@ const mockAccounts: FinanceAccount[] = [
   },
 ]
 
+const mockCreditCards: FinanceCreditCard[] = [
+  {
+    accountId: 2,
+    name: 'HDFC Millennia',
+    type: 'credit_card',
+    network: 'Visa',
+    last4: '4821',
+    creditLimit: 200000,
+    statementDay: 15,
+    dueDayOffset: 20,
+    autopay: true,
+    outstanding: 42000,
+    availableLimit: 158000,
+    utilizationPercent: 21,
+    currentStatement: {
+      id: 101,
+      accountId: 2,
+      periodStart: '2026-05-16',
+      periodEnd: '2026-06-15',
+      statementDate: '2026-06-15',
+      dueDate: '2026-07-05',
+      spend: 42000,
+      paid: 0,
+      remainingDue: 42000,
+      status: 'generated',
+    },
+    previousStatement: {
+      id: 100,
+      accountId: 2,
+      periodStart: '2026-04-16',
+      periodEnd: '2026-05-15',
+      statementDate: '2026-05-15',
+      dueDate: '2026-06-04',
+      spend: 38500,
+      paid: 38500,
+      remainingDue: 0,
+      status: 'paid',
+    },
+  },
+  {
+    accountId: 3,
+    name: 'ICICI Amazon Pay',
+    type: 'credit_card',
+    network: 'RuPay',
+    last4: '9034',
+    creditLimit: 150000,
+    statementDay: 10,
+    dueDayOffset: 18,
+    autopay: false,
+    outstanding: 112000,
+    availableLimit: 38000,
+    utilizationPercent: 74.7,
+    currentStatement: {
+      id: 201,
+      accountId: 3,
+      periodStart: '2026-05-11',
+      periodEnd: '2026-06-10',
+      statementDate: '2026-06-10',
+      dueDate: '2026-06-28',
+      spend: 112000,
+      paid: 20000,
+      remainingDue: 92000,
+      status: 'partial',
+    },
+    previousStatement: {
+      id: 200,
+      accountId: 3,
+      periodStart: '2026-04-11',
+      periodEnd: '2026-05-10',
+      statementDate: '2026-05-10',
+      dueDate: '2026-05-28',
+      spend: 98000,
+      paid: 98000,
+      remainingDue: 0,
+      status: 'paid',
+    },
+  },
+]
+
+const mockStatements: FinanceStatement[] = [
+  ...(mockCreditCards[0].previousStatement ? [mockCreditCards[0].previousStatement] : []),
+  ...(mockCreditCards[0].currentStatement ? [mockCreditCards[0].currentStatement] : []),
+  ...(mockCreditCards[1].previousStatement ? [mockCreditCards[1].previousStatement] : []),
+  ...(mockCreditCards[1].currentStatement ? [mockCreditCards[1].currentStatement] : []),
+]
+
 function monthBounds() {
   const today = new Date()
   const month = String(today.getMonth() + 1).padStart(2, '0')
@@ -301,7 +387,25 @@ export async function getAccounts(): Promise<FinanceAccount[]> {
 
 export async function getCreditCards(): Promise<FinanceCreditCard[]> {
   await latency()
-  return []
+  return mockCreditCards.map((card) => ({ ...card }))
+}
+
+export async function getCreditCard(accountId: number): Promise<FinanceCreditCard> {
+  await latency()
+  const card = mockCreditCards.find((row) => row.accountId === accountId)
+  if (!card) throw new Error(`Credit card ${accountId} not found (mock).`)
+  return { ...card }
+}
+
+export async function createCardPayment(input: {
+  from_account_id: number
+  card_account_id: number
+  amount: number
+  occurred_on: string
+  statement_id?: number | null
+}) {
+  await latency()
+  return { meta: { message: `Paid ₹${input.amount} toward card ${input.card_account_id} (mock).` } }
 }
 
 export async function createCreditCard(input: {
@@ -388,9 +492,11 @@ export async function updateCreditCard(
   }
 }
 
-export async function getStatements(_accountId: number): Promise<FinanceStatement[]> {
+export async function getStatements(accountId: number): Promise<FinanceStatement[]> {
   await latency()
-  return []
+  return mockStatements
+    .filter((statement) => statement.accountId === accountId)
+    .map((statement) => ({ ...statement }))
 }
 
 export async function getFinanceTransactions(params?: {
