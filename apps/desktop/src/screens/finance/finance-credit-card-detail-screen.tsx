@@ -6,6 +6,8 @@ import { CreditCardEditForm } from '@/components/finance/credit-card-edit-form'
 import { CreditCardExpenseForm } from '@/components/finance/credit-card-expense-form'
 import { CreditCardPayForm } from '@/components/finance/credit-card-pay-form'
 import { CreditCardUtilizationHistory } from '@/components/finance/credit-card-utilization-history'
+import { FeedbackBanner } from '@/components/finance/feedback'
+import { useFinanceFeedback } from '@/hooks/use-finance-feedback'
 import {
   CreditCardFace,
   CreditCardMetricsGrid,
@@ -57,7 +59,7 @@ export function FinanceCreditCardDetailScreen() {
   const createCategory = useCreateCategory()
   const createMerchant = useCreateMerchant()
   const [panel, setPanel] = useState<DetailPanel>('none')
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const { feedback, notify } = useFinanceFeedback()
 
   const assetAccounts = (accountsQuery.data ?? []).filter((account) => account.classification === 'asset')
   const busy =
@@ -121,7 +123,7 @@ export function FinanceCreditCardDetailScreen() {
                 }
               />
 
-              {feedback ? <p className="mb-4 text-sm text-emerald-400">{feedback}</p> : null}
+              <FeedbackBanner feedback={feedback} />
 
               <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
                 <div className="space-y-4">
@@ -152,10 +154,10 @@ export function FinanceCreditCardDetailScreen() {
                       onCancel={() => setPanel('none')}
                       onConfirm={() =>
                         void archiveAccount.mutateAsync(card.accountId).then((result) => {
-                          setFeedback(result.meta.message)
+                          notify(result.meta.message)
                           navigate('/finance/credit-cards')
                         }).catch((error) => {
-                          setFeedback(error instanceof ApiError ? error.message : 'Could not archive card.')
+                          notify(error instanceof ApiError ? error.message : 'Could not archive card.', 'error')
                         })
                       }
                     />
@@ -169,7 +171,7 @@ export function FinanceCreditCardDetailScreen() {
                           busy={busy}
                           onSubmit={async (input) => {
                             const result = await updateCreditCard.mutateAsync({ accountId: card.accountId, input })
-                            setFeedback(result.meta.message)
+                            notify(result.meta.message)
                             setPanel('none')
                           }}
                           onCancel={() => setPanel('none')}
@@ -198,7 +200,7 @@ export function FinanceCreditCardDetailScreen() {
                               occurred_on: values.occurredOn,
                               statement_id: values.statementId ?? null,
                             })
-                            setFeedback(result.meta.message)
+                            notify(result.meta.message)
                             setPanel('none')
                           }}
                           onCancel={() => setPanel('none')}
@@ -229,7 +231,7 @@ export function FinanceCreditCardDetailScreen() {
                               category_id: values.categoryId ?? null,
                               merchant_id: values.merchantId ?? null,
                             })
-                            setFeedback(result.meta.message)
+                            notify(result.meta.message)
                             setPanel('none')
                           }}
                           onCancel={() => setPanel('none')}

@@ -10,6 +10,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import { ConfirmActionBar } from '@/components/finance/confirm-action-bar'
+import type { FeedbackTone } from '@/hooks/use-finance-feedback'
 import { CreditCardEditForm } from '@/components/finance/credit-card-edit-form'
 import { CreditCardExpenseForm } from '@/components/finance/credit-card-expense-form'
 import { CreditCardPayForm } from '@/components/finance/credit-card-pay-form'
@@ -42,7 +43,7 @@ type ActivePanel = 'none' | 'pay' | 'expense' | 'edit' | 'archive'
 
 interface CreditCardTileProps {
   card: FinanceCreditCard
-  onFeedback: (message: string) => void
+  onFeedback: (message: string, tone?: FeedbackTone) => void
 }
 
 export function CreditCardTile({ card, onFeedback }: CreditCardTileProps) {
@@ -71,7 +72,7 @@ export function CreditCardTile({ card, onFeedback }: CreditCardTileProps) {
       onFeedback(result.meta.message)
       setActivePanel('none')
     } catch (error) {
-      onFeedback(error instanceof ApiError ? error.message : 'Could not update credit card.')
+      onFeedback(error instanceof ApiError ? error.message : 'Could not update credit card.', 'error')
     }
   }
 
@@ -81,7 +82,7 @@ export function CreditCardTile({ card, onFeedback }: CreditCardTileProps) {
       onFeedback(result.meta.message)
       setActivePanel('none')
     } catch (error) {
-      onFeedback(error instanceof ApiError ? error.message : 'Could not archive credit card.')
+      onFeedback(error instanceof ApiError ? error.message : 'Could not archive credit card.', 'error')
     }
   }
 
@@ -102,7 +103,7 @@ export function CreditCardTile({ card, onFeedback }: CreditCardTileProps) {
       onFeedback(result.meta.message)
       setActivePanel('none')
     } catch (error) {
-      onFeedback(error instanceof ApiError ? error.message : 'Could not pay card.')
+      onFeedback(error instanceof ApiError ? error.message : 'Could not pay card.', 'error')
     }
   }
 
@@ -127,7 +128,7 @@ export function CreditCardTile({ card, onFeedback }: CreditCardTileProps) {
       onFeedback(result.meta.message)
       setActivePanel('none')
     } catch (error) {
-      onFeedback(error instanceof ApiError ? error.message : 'Could not add expense.')
+      onFeedback(error instanceof ApiError ? error.message : 'Could not add expense.', 'error')
     }
   }
 

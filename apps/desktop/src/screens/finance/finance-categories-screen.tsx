@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
+import { FeedbackBanner } from '@/components/finance/feedback'
+import { useFinanceFeedback } from '@/hooks/use-finance-feedback'
 import { ScreenHeader } from '@/components/layout/screen-header'
 import { TaxonomyRow } from '@/components/finance/taxonomy-row'
 import { Button } from '@/components/ui/button'
@@ -16,18 +18,18 @@ export function FinanceCategoriesScreen() {
   const deleteCategory = useDeleteCategory()
   const [showForm, setShowForm] = useState(false)
   const [name, setName] = useState('')
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const { feedback, notify, reset } = useFinanceFeedback()
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault()
-    setFeedback(null)
+    reset()
     try {
       const result = await createCategory.mutateAsync({ name: name.trim() })
       setName('')
       setShowForm(false)
-      setFeedback(result.meta.message)
+      notify(result.meta.message)
     } catch (error) {
-      setFeedback(error instanceof ApiError ? error.message : 'Could not create category.')
+      notify(error instanceof ApiError ? error.message : 'Could not create category.', 'error')
     }
   }
 
@@ -43,7 +45,7 @@ export function FinanceCategoriesScreen() {
           </Button>
         }
       />
-      {feedback ? <p className="mb-4 text-sm text-emerald-400">{feedback}</p> : null}
+      <FeedbackBanner feedback={feedback} />
       {showForm ? (
         <Card className="mb-4">
           <CardHeader>
@@ -94,17 +96,17 @@ export function FinanceCategoriesScreen() {
                   key={category.id}
                   id={category.id}
                   name={category.name}
-                  onFeedback={setFeedback}
+                  onFeedback={notify}
                   onUpdate={async (categoryId, nextName) => {
                     const result = await updateCategory.mutateAsync({
                       categoryId,
                       input: { name: nextName },
                     })
-                    setFeedback(result.meta.message)
+                    notify(result.meta.message)
                   }}
                   onDelete={async (categoryId) => {
                     const result = await deleteCategory.mutateAsync(categoryId)
-                    setFeedback(result.meta.message)
+                    notify(result.meta.message)
                   }}
                 />
               ))}

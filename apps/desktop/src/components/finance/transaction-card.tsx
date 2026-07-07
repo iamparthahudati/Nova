@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
 import { ConfirmActionBar } from '@/components/finance/confirm-action-bar'
+import type { FeedbackTone } from '@/hooks/use-finance-feedback'
 import { Amount } from '@/components/finance/metric-card'
 import { TransactionForm, type TransactionFormValues } from '@/components/finance/transaction-form'
 import { Badge } from '@/components/ui/badge'
@@ -16,7 +17,7 @@ interface TransactionCardProps {
   merchants: FinanceMerchant[]
   busy?: boolean
   readOnly?: boolean
-  onFeedback?: (message: string) => void
+  onFeedback?: (message: string, tone?: FeedbackTone) => void
   onUpdate?: (transactionId: number, values: TransactionFormValues) => Promise<void>
   onDelete?: (transactionId: number) => Promise<void>
   onCreateCategory?: (name: string) => Promise<{ id: number }>
@@ -65,7 +66,7 @@ export function TransactionCard({
       await onUpdate(transaction.id, formValues)
       setEditing(false)
     } catch (error) {
-      onFeedback?.(error instanceof Error ? error.message : 'Could not update transaction.')
+      onFeedback?.(error instanceof Error ? error.message : 'Could not update transaction.', 'error')
     }
   }
 
@@ -75,7 +76,7 @@ export function TransactionCard({
       await onDelete(transaction.id)
       setPendingDelete(false)
     } catch (error) {
-      onFeedback?.(error instanceof Error ? error.message : 'Could not delete transaction.')
+      onFeedback?.(error instanceof Error ? error.message : 'Could not delete transaction.', 'error')
     }
   }
 
