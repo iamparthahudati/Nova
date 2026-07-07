@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
 import { AccountCard, AccountTypeSelect } from '@/components/finance/account-card'
+import { FeedbackBanner } from '@/components/finance/feedback'
+import { useFinanceFeedback } from '@/hooks/use-finance-feedback'
 import { ScreenHeader } from '@/components/layout/screen-header'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,7 +24,7 @@ export function FinanceAccountsScreen() {
   const [name, setName] = useState('')
   const [accountType, setAccountType] = useState('bank')
   const [openingBalance, setOpeningBalance] = useState('0')
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const { feedback, notify, reset } = useFinanceFeedback()
   const [fromAccountId, setFromAccountId] = useState<number | ''>('')
   const [toAccountId, setToAccountId] = useState<number | ''>('')
   const [transferAmount, setTransferAmount] = useState('')
@@ -36,7 +38,7 @@ export function FinanceAccountsScreen() {
   async function handleTransfer(event: React.FormEvent) {
     event.preventDefault()
     if (!fromAccountId || !toAccountId) return
-    setFeedback(null)
+    reset()
     try {
       const result = await createTransfer.mutateAsync({
         from_account_id: Number(fromAccountId),
@@ -44,16 +46,16 @@ export function FinanceAccountsScreen() {
         amount: Number(transferAmount),
         occurred_on: transferDate,
       })
-      setFeedback(result.meta.message)
+      notify(result.meta.message)
       setShowTransfer(false)
     } catch (error) {
-      setFeedback(error instanceof ApiError ? error.message : 'Could not create transfer.')
+      notify(error instanceof ApiError ? error.message : 'Could not create transfer.', 'error')
     }
   }
 
   async function handleCreate(event: React.FormEvent) {
     event.preventDefault()
-    setFeedback(null)
+    reset()
     try {
       const result = await createAccount.mutateAsync({
         name,
@@ -64,9 +66,9 @@ export function FinanceAccountsScreen() {
       setOpeningBalance('0')
       setAccountType('bank')
       setShowForm(false)
-      setFeedback(result.meta.message)
+      notify(result.meta.message)
     } catch (error) {
-      setFeedback(error instanceof ApiError ? error.message : 'Could not create account.')
+      notify(error instanceof ApiError ? error.message : 'Could not create account.', 'error')
     }
   }
 
@@ -94,7 +96,7 @@ export function FinanceAccountsScreen() {
           </div>
         }
       />
-      {feedback ? <p className="mb-4 text-sm text-emerald-400">{feedback}</p> : null}
+      <FeedbackBanner feedback={feedback} />
       {showTransfer ? (
         <Card className="mb-4">
           <CardHeader>
@@ -132,6 +134,8 @@ export function FinanceAccountsScreen() {
                 type="number"
                 min="0.01"
                 step="0.01"
+                placeholder="Amount"
+                aria-label="Transfer amount"
                 className="rounded-md border border-border bg-background px-3 py-2 text-sm"
                 value={transferAmount}
                 onChange={(e) => setTransferAmount(e.target.value)}
@@ -234,7 +238,7 @@ export function FinanceAccountsScreen() {
                   </div>
                   <div className="grid gap-3">
                     {assets.map((account) => (
-                      <AccountCard key={account.id} account={account} onFeedback={setFeedback} />
+                      <AccountCard key={account.id} account={account} onFeedback={notify} />
                     ))}
                   </div>
                 </section>
@@ -249,7 +253,7 @@ export function FinanceAccountsScreen() {
                   </div>
                   <div className="grid gap-3">
                     {liabilities.map((account) => (
-                      <AccountCard key={account.id} account={account} onFeedback={setFeedback} />
+                      <AccountCard key={account.id} account={account} onFeedback={notify} />
                     ))}
                   </div>
                 </section>

@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Plus, Receipt } from 'lucide-react'
+import { FeedbackBanner } from '@/components/finance/feedback'
+import { useFinanceFeedback } from '@/hooks/use-finance-feedback'
 import { ScreenHeader } from '@/components/layout/screen-header'
 import { TransactionCard } from '@/components/finance/transaction-card'
 import { TransactionFilters, type TransactionFilterState } from '@/components/finance/transaction-filters'
@@ -65,7 +67,7 @@ export function FinanceTransactionsScreen() {
   const createMerchant = useCreateMerchant()
   const [showForm, setShowForm] = useState(false)
   const [formValues, setFormValues] = useState<TransactionFormValues>(EMPTY_FORM)
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const { feedback, notify, reset } = useFinanceFeedback()
   const mutationBusy =
     createTransaction.isPending || updateTransaction.isPending || deleteTransaction.isPending
 
@@ -87,7 +89,7 @@ export function FinanceTransactionsScreen() {
 
   async function handleCreate(values: TransactionFormValues) {
     if (!values.accountId) return
-    setFeedback(null)
+    reset()
     const savedAccountId = Number(values.accountId)
     const accountName =
       (accountsQuery.data ?? []).find((account) => account.id === savedAccountId)?.name ?? 'account'
@@ -105,9 +107,9 @@ export function FinanceTransactionsScreen() {
       setShowForm(false)
       setOffset(0)
       setFilters((current) => ({ ...current, accountId: savedAccountId, kind: '', search: '' }))
-      setFeedback(`${result.meta.message} Showing ${accountName} below.`)
+      notify(`${result.meta.message} Showing ${accountName} below.`)
     } catch (error) {
-      setFeedback(error instanceof ApiError ? error.message : 'Could not create transaction.')
+      notify(error instanceof ApiError ? error.message : 'Could not create transaction.', 'error')
     }
   }
 
@@ -122,12 +124,12 @@ export function FinanceTransactionsScreen() {
         merchant_id: values.merchantId ? Number(values.merchantId) : null,
       },
     })
-    setFeedback(result.meta.message)
+    notify(result.meta.message)
   }
 
   async function handleDelete(transactionId: number) {
     const result = await deleteTransaction.mutateAsync(transactionId)
-    setFeedback(result.meta.message)
+    notify(result.meta.message)
   }
 
   return (
@@ -150,7 +152,7 @@ export function FinanceTransactionsScreen() {
         onChange={handleFilterChange}
         onReset={resetFilters}
       />
-      {feedback ? <p className="mb-4 mt-4 text-sm text-emerald-400">{feedback}</p> : null}
+      <FeedbackBanner feedback={feedback} className="mt-4" />
       {showForm ? (
         <Card className="mb-4 mt-4">
           <CardHeader>
@@ -211,7 +213,7 @@ export function FinanceTransactionsScreen() {
                     categories={categoriesQuery.data ?? []}
                     merchants={merchantsQuery.data ?? []}
                     busy={mutationBusy}
-                    onFeedback={setFeedback}
+                    onFeedback={notify}
                     onUpdate={handleUpdate}
                     onDelete={handleDelete}
                     onCreateCategory={async (name) => {

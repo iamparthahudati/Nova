@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { Plus } from 'lucide-react'
 import { CreditCardCreateForm } from '@/components/finance/credit-card-create-form'
 import { CreditCardEmptyState, CreditCardLoadingGrid, CreditCardTile } from '@/components/finance/credit-card-tile'
+import { FeedbackBanner } from '@/components/finance/feedback'
+import { useFinanceFeedback } from '@/hooks/use-finance-feedback'
 import { ScreenHeader } from '@/components/layout/screen-header'
 import { Button } from '@/components/ui/button'
 import { useCreditCards } from '@/hooks/use-finance'
@@ -12,7 +14,7 @@ export function FinanceCreditCardsScreen() {
   const cards = useCreditCards()
   const createCreditCard = useCreateCreditCard()
   const [showForm, setShowForm] = useState(false)
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const { feedback, notify, reset } = useFinanceFeedback()
 
   async function handleCreate(values: {
     name: string
@@ -23,7 +25,7 @@ export function FinanceCreditCardsScreen() {
     last4: string
     openingBalance: string
   }) {
-    setFeedback(null)
+    reset()
     try {
       const result = await createCreditCard.mutateAsync({
         name: values.name,
@@ -35,9 +37,9 @@ export function FinanceCreditCardsScreen() {
         last4: values.last4 || undefined,
       })
       setShowForm(false)
-      setFeedback(result.meta.message)
+      notify(result.meta.message)
     } catch (error) {
-      setFeedback(error instanceof ApiError ? error.message : 'Could not create credit card.')
+      notify(error instanceof ApiError ? error.message : 'Could not create credit card.', 'error')
     }
   }
 
@@ -53,7 +55,7 @@ export function FinanceCreditCardsScreen() {
           </Button>
         }
       />
-      {feedback ? <p className="mb-4 text-sm text-emerald-400">{feedback}</p> : null}
+      <FeedbackBanner feedback={feedback} />
       {showForm ? (
         <CreditCardCreateForm
           busy={createCreditCard.isPending}
@@ -77,7 +79,7 @@ export function FinanceCreditCardsScreen() {
       {!cards.isLoading && !cards.isError && cards.data && cards.data.length > 0 ? (
         <div className="grid gap-4 xl:grid-cols-2">
           {cards.data.map((card) => (
-            <CreditCardTile key={card.accountId} card={card} onFeedback={setFeedback} />
+            <CreditCardTile key={card.accountId} card={card} onFeedback={notify} />
           ))}
         </div>
       ) : null}

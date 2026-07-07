@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, CheckCircle2 } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
+import { FeedbackBanner } from '@/components/finance/feedback'
+import { useFinanceFeedback } from '@/hooks/use-finance-feedback'
 import { StatementPayForm } from '@/components/finance/statement-pay-form'
 import { StatementSpendBreakdown } from '@/components/finance/statement-spend-breakdown'
 import { StatementStatusChip } from '@/components/finance/statement-status-chip'
@@ -46,7 +48,7 @@ export function FinanceStatementDetailScreen() {
   const [showDuesForm, setShowDuesForm] = useState(false)
   const [totalDueInput, setTotalDueInput] = useState('')
   const [minDueInput, setMinDueInput] = useState('')
-  const [feedback, setFeedback] = useState<string | null>(null)
+  const { feedback, notify, reset } = useFinanceFeedback()
 
   const assetAccounts = (accountsQuery.data ?? []).filter((account) => account.classification === 'asset')
   const busy = payStatement.isPending || updateStatement.isPending
@@ -110,12 +112,7 @@ export function FinanceStatementDetailScreen() {
                 }
               />
 
-              {feedback ? (
-                <div className="mb-4 flex items-start gap-2 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm text-emerald-300">
-                  <CheckCircle2 className="mt-0.5 size-4 shrink-0" />
-                  <p>{feedback}</p>
-                </div>
-              ) : null}
+              <FeedbackBanner feedback={feedback} />
 
               {showPayForm && displayStatus !== 'paid' ? (
                 <div className="mb-4">
@@ -125,7 +122,7 @@ export function FinanceStatementDetailScreen() {
                     busy={busy}
                     onCancel={() => setShowPayForm(false)}
                     onSubmit={async (values) => {
-                      setFeedback(null)
+                      reset()
                       try {
                         const result = await payStatement.mutateAsync({
                           statementId: statement.id,
@@ -136,9 +133,9 @@ export function FinanceStatementDetailScreen() {
                           },
                         })
                         setShowPayForm(false)
-                        setFeedback(result.meta.message)
+                        notify(result.meta.message)
                       } catch (error) {
-                        setFeedback(error instanceof ApiError ? error.message : 'Could not pay statement.')
+                        notify(error instanceof ApiError ? error.message : 'Could not pay statement.', 'error')
                       }
                     }}
                   />
@@ -175,7 +172,7 @@ export function FinanceStatementDetailScreen() {
                         disabled={busy}
                         onClick={() =>
                           void (async () => {
-                            setFeedback(null)
+                            reset()
                             try {
                               const result = await updateStatement.mutateAsync({
                                 statementId: statement.id,
@@ -187,10 +184,11 @@ export function FinanceStatementDetailScreen() {
                               setShowDuesForm(false)
                               setTotalDueInput('')
                               setMinDueInput('')
-                              setFeedback(result.meta.message)
+                              notify(result.meta.message)
                             } catch (error) {
-                              setFeedback(
+                              notify(
                                 error instanceof ApiError ? error.message : 'Could not update statement.',
+                                'error',
                               )
                             }
                           })()

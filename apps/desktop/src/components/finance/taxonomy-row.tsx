@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
 import { ConfirmActionBar } from '@/components/finance/confirm-action-bar'
+import type { FeedbackTone } from '@/hooks/use-finance-feedback'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ApiError } from '@/lib/api-client'
@@ -10,7 +11,7 @@ interface TaxonomyRowProps {
   name: string
   onUpdate: (id: number, name: string) => Promise<void>
   onDelete: (id: number) => Promise<void>
-  onFeedback: (message: string) => void
+  onFeedback: (message: string, tone?: FeedbackTone) => void
   deleteLabel?: string
 }
 
@@ -40,7 +41,7 @@ export function TaxonomyRow({
       await onUpdate(id, trimmed)
       setEditing(false)
     } catch (error) {
-      onFeedback(error instanceof ApiError ? error.message : 'Could not update.')
+      onFeedback(error instanceof ApiError ? error.message : 'Could not update.', 'error')
     } finally {
       setBusy(false)
     }
@@ -52,7 +53,7 @@ export function TaxonomyRow({
       await onDelete(id)
       setPendingDelete(false)
     } catch (error) {
-      onFeedback(error instanceof ApiError ? error.message : 'Could not delete.')
+      onFeedback(error instanceof ApiError ? error.message : 'Could not delete.', 'error')
     } finally {
       setBusy(false)
     }
@@ -103,6 +104,7 @@ export function TaxonomyRow({
             <div className="flex items-center gap-1">
               <Button variant="ghost" size="icon" className="size-8" disabled={busy} onClick={() => setEditing(true)}>
                 <Pencil className="size-4" />
+                <span className="sr-only">Edit {name}</span>
               </Button>
               <Button
                 variant="ghost"
@@ -112,7 +114,7 @@ export function TaxonomyRow({
                 onClick={() => setPendingDelete(true)}
               >
                 <Trash2 className="size-4" />
-                <span className="sr-only">{deleteLabel}</span>
+                <span className="sr-only">{deleteLabel} {name}</span>
               </Button>
             </div>
           </>

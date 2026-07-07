@@ -58,12 +58,6 @@ def list_reward_programs(account_id: Optional[int] = None) -> list[dict]:
     return rows
 
 
-def get_reward_program(program_id: int) -> dict:
-    program = _reward_programs.get_program(program_id)
-    balance = _reward_projections.compute_program_balance(program.id)
-    return _enrich_reward_program(program, balance)
-
-
 def get_reward_program_detail(program_id: int) -> dict:
     today = date.today()
     detail = _reward_projections.build_program_detail(program_id, today)

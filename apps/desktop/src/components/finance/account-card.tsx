@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Archive, Pencil, RotateCcw } from 'lucide-react'
 import { ConfirmActionBar } from '@/components/finance/confirm-action-bar'
+import type { FeedbackTone } from '@/hooks/use-finance-feedback'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -17,7 +18,7 @@ import type { FinanceAccount } from '@/view-models/finance'
 
 interface AccountCardProps {
   account: FinanceAccount
-  onFeedback: (message: string) => void
+  onFeedback: (message: string, tone?: FeedbackTone) => void
 }
 
 type PendingAction = 'archive' | 'restore' | null
@@ -56,7 +57,7 @@ export function AccountCard({ account, onFeedback }: AccountCardProps) {
       onFeedback(result.meta.message)
       setEditing(false)
     } catch (error) {
-      onFeedback(error instanceof ApiError ? error.message : 'Could not update account.')
+      onFeedback(error instanceof ApiError ? error.message : 'Could not update account.', 'error')
     }
   }
 
@@ -67,7 +68,7 @@ export function AccountCard({ account, onFeedback }: AccountCardProps) {
       setPendingAction(null)
       setEditing(false)
     } catch (error) {
-      onFeedback(error instanceof ApiError ? error.message : 'Could not archive account.')
+      onFeedback(error instanceof ApiError ? error.message : 'Could not archive account.', 'error')
     }
   }
 
@@ -78,7 +79,7 @@ export function AccountCard({ account, onFeedback }: AccountCardProps) {
       setPendingAction(null)
       setEditing(false)
     } catch (error) {
-      onFeedback(error instanceof ApiError ? error.message : 'Could not restore account.')
+      onFeedback(error instanceof ApiError ? error.message : 'Could not restore account.', 'error')
     }
   }
 
