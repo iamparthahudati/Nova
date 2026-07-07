@@ -48,11 +48,17 @@ re-litigating choices that were made deliberately and frozen.
 | [0018](0018-voice-first-interaction.md) | Voice-first interaction | Accepted |
 | [0019](0019-electron-desktop-separate-process.md) | Electron desktop as a separate process | Accepted |
 | [0020](0020-fastapi-facade.md) | FastAPI facade as the desktop boundary | Accepted |
-| [0021](0021-read-only-api-philosophy.md) | Read-only API philosophy | Accepted |
-| [0022](0022-testing-philosophy.md) | Testing philosophy | Accepted |
-| [0023](0023-architecture-testing.md) | Architecture testing (boundaries as code) | Accepted |
-| [0024](0024-stable-contracts-flexible-internals.md) | Stable contracts, flexible internals | Accepted |
+| [0021](0021-workos-core-architecture.md) | WorkOS core architecture (WOS-ADR-001) | Accepted |
+| [0022](0022-workos-two-ledger-architecture.md) | WorkOS two-ledger architecture (WOS-ADR-002) | Accepted |
+| [0023](0023-workos-derived-state.md) | WorkOS derived state (WOS-ADR-003) | Accepted |
 
-_All ADRs recorded 2026-07-06 as the founding ADR library. The decisions
-themselves were made during Nova Core v1.0 design and are frozen; this library
-is the retroactive, permanent record of them._
+_WorkOS implementation companions (not ADRs):_
+[`workos/MODULE_BOUNDARIES.md`](../workos/MODULE_BOUNDARIES.md) ·
+[`workos/DATABASE_STRUCTURE.md`](../workos/DATABASE_STRUCTURE.md) ·
+[`workos/IMPLEMENTATION_PLAN.md`](../workos/IMPLEMENTATION_PLAN.md) ·
+[`workos/IMPLEMENTATION_RISKS.md`](../workos/IMPLEMENTATION_RISKS.md) ·
+[`workos/IMPLEMENTATION_GOVERNANCE.md`](../workos/IMPLEMENTATION_GOVERNANCE.md)
+
+_All ADRs recorded 2026-07-06 as the founding ADR library unless otherwise dated.
+The decisions themselves were made during Nova Core v1.0 design and are frozen;
+this library is the retroactive, permanent record of them._

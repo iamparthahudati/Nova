@@ -49,6 +49,7 @@ FIRST_PARTY_ROOTS = {
     "services",
     "domains",
     "identity",
+    "money",
     "paths",
     "conversation_memory",
     "memory_producers",
@@ -57,7 +58,7 @@ FIRST_PARTY_ROOTS = {
 # Tiny, dependency-free shared helpers with no I/O and no business logic.
 # Not yet split into a `core`/`contracts` package (Eng Spec's aspirational
 # taxonomy), but behave like one today: any unit may import these.
-ROOT_UTILS = {"identity", "paths", "conversation_memory", "memory_producers"}
+ROOT_UTILS = {"identity", "money", "paths", "conversation_memory", "memory_producers"}
 
 # unit name -> allowed first-party dependencies (beyond ROOT_UTILS, always allowed)
 ALLOWED_EDGES: dict[str, set[str]] = {
@@ -66,16 +67,18 @@ ALLOWED_EDGES: dict[str, set[str]] = {
     "services.automation": set(),
     "services.knowledge": {"memory", "services.brain"},
     "services.brain": {"memory"},
-    "services.planner": {"memory", "services.calendar", "domains.finance"},
+    "services.planner": {"memory", "services.calendar", "domains.finance", "domains.work"},
     "services.api": {
         "memory",
         "runtime",
         "services.brain",
         "services.calendar",
         "services.planner",
+        "domains.work",
     },
     "memory": set(),
     "domains.finance": {"memory", "runtime"},
+    "domains.work": {"memory", "runtime"},
     "runtime": {
         "memory",
         "services.voice",
@@ -213,6 +216,24 @@ def test_finance_domain_only_imports_memory_and_runtime():
                 rel = path.relative_to(BACKEND_ROOT)
                 violations.append(f"{rel}: {unit} -> {imported}")
     assert not violations, "Finance domain isolation violations:\n" + "\n".join(violations)
+
+
+def test_work_domain_only_imports_memory_and_runtime():
+    """domains.work is isolated — no other domains or services."""
+    violations = []
+    work_root = BACKEND_ROOT / "domains" / "work"
+    if not work_root.exists():
+        return
+    for path in work_root.rglob("*.py"):
+        unit = "domains.work"
+        allowed = ALLOWED_EDGES[unit]
+        for imported in _first_party_imports(path):
+            if imported in ROOT_UTILS or imported == unit:
+                continue
+            if imported not in allowed:
+                rel = path.relative_to(BACKEND_ROOT)
+                violations.append(f"{rel}: {unit} -> {imported}")
+    assert not violations, "Work domain isolation violations:\n" + "\n".join(violations)
 
 
 def test_leaf_services_have_no_dependencies():

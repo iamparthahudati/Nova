@@ -289,6 +289,10 @@ def init_db() -> None:
         """)
         migrate_finance_indexes(con)
 
+        from .work.migrations import migrate_work_schema
+
+        migrate_work_schema(con)
+
         from .finance.seed import ensure_default_cash_account
 
         ensure_default_cash_account()

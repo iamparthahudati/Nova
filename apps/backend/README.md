@@ -3,10 +3,27 @@
 Backend runtime code lives in `apps/backend`:
 
 - `memory/` (only persistence owner)
+- `domains/` (Finance, WorkOS — business rules, no I/O)
 - `services/` (domain services, including Brain as Claude owner)
+- `money.py` (shared `MoneyAmount` — Finance and WorkOS both import this)
 - `nova.py` (assistant composition root)
 - `dashboard.py` (read-only web dashboard)
 - `tests/`
+
+## WorkOS governance
+
+WorkOS implementation follows frozen ADRs 0021–0023 and
+[`docs/workos/IMPLEMENTATION_GOVERNANCE.md`](../../docs/workos/IMPLEMENTATION_GOVERNANCE.md).
+Every WorkOS PR must pass:
+
+- `tests/architecture/test_dependencies.py` — `domains.work` may import only
+  `{memory, runtime}` plus root utils; `services.planner` and `services.api`
+  may import `domains.work`.
+- `tests/architecture/test_workos_governance.py` — no derived columns in
+  migrations; `MutationEvent` shape unchanged; entity_type vocabulary registered.
+- Real SQLite tests — never mock the database.
+
+Build order: [`docs/workos/IMPLEMENTATION_PLAN.md`](../../docs/workos/IMPLEMENTATION_PLAN.md).
 
 ## Run
 

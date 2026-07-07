@@ -1,32 +1,17 @@
-"""Money and date value objects — pure, no I/O."""
+"""Finance date value objects and re-exports of shared Money."""
 
 from __future__ import annotations
 
 import re
 from dataclasses import dataclass
 from datetime import date, timedelta
-from decimal import ROUND_HALF_UP, Decimal
+
+from money import MoneyAmount
 
 from .errors import FinanceValidationError
+from .value_objects import AccountType
 
 _DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-
-
-@dataclass(frozen=True)
-class MoneyAmount:
-    minor: int
-
-    @classmethod
-    def from_rupees(cls, amount: float) -> MoneyAmount:
-        if amount <= 0:
-            raise FinanceValidationError("Amount must be positive")
-        paise = int((Decimal(str(amount)) * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
-        if paise <= 0:
-            raise FinanceValidationError("Amount must be positive")
-        return cls(paise)
-
-    def to_rupees(self) -> float:
-        return self.minor / 100.0
 
 
 @dataclass(frozen=True)
@@ -57,6 +42,9 @@ class OccurredOn:
 
 
 def classification_for_type(account_type: str) -> str:
-    if account_type in {"credit_card", "loan"}:
+    if account_type in {AccountType.CREDIT_CARD.value, AccountType.LOAN.value}:
         return "liability"
     return "asset"
+
+
+__all__ = ["MoneyAmount", "OccurredOn", "classification_for_type"]
