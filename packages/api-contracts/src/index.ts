@@ -279,14 +279,27 @@ export interface FinanceDashboardResponse {
   total_assets: number
   total_liabilities_minor: number
   total_liabilities: number
+  cash_available_minor: number
+  cash_available: number
   credit_utilization_ratio: number
   credit_utilization_percent: number
+  total_outstanding_minor: number
+  total_outstanding: number
+  total_available_credit_minor: number
+  total_available_credit: number
+  cards_near_due_count: number
+  income_month: number
   spent_month: number
+  savings_month: number
   reward_balance: number
+  rewards_earned_month: number
   cashback_earned_month_minor: number
   cashback_earned_month: number
+  account_count: number
+  credit_card_count: number
   upcoming_due_dates: Array<Record<string, unknown>>
   recent_transactions: Array<Record<string, unknown>>
+  latest_rewards: Array<Record<string, unknown>>
 }
 
 export interface AccountResponse {

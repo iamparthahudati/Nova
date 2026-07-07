@@ -91,13 +91,49 @@ def _build_upcoming_due(cards, today: date, created_statements: list[dict]) -> l
     return upcoming_due
 
 
-def get_finance_dashboard(today: Optional[date] = None) -> tuple[dict, list[dict]]:
-    today = today or date.today()
-    month_start = today.replace(day=1).isoformat()
-    month_end = today.isoformat()
-    created_statements: list[dict] = []
+def _count_cards_near_due(upcoming_due: list[dict], today: date, within_days: int = 7) -> int:
+    count = 0
+    for row in upcoming_due:
+        due = date.fromisoformat(row["due_date"])
+        days_left = (due - today).days
+        if 0 <= days_left <= within_days and row["status"] in {"due", "overdue", "partial"}:
+            count += 1
+    return count
 
-    balances = _projections.list_account_balances()
+
+def _serialize_latest_rewards(limit: int = 5) -> list[dict]:
+    rows = []
+    for event in _reward_projections.list_recent_events(limit):
+        amount = event["amount"]
+        unit = event["program_unit"]
+        rows.append(
+            {
+                "id": event["id"],
+                "program_id": event["program_id"],
+                "program_name": event["program_name"],
+                "account_id": event["account_id"],
+                "kind": event["kind"],
+                "direction": event["direction"],
+                "amount": amount,
+                "unit": unit,
+                "amount_display": amount / 100.0 if unit == "cashback_minor" else amount,
+                "note": event.get("note"),
+                "occurred_on": event["occurred_on"],
+            },
+        )
+    return rows
+
+
+def _compute_rewards_earned_month(month_start: str, month_end: str) -> int:
+    earned = 0
+    for program in _reward_programs.list_programs():
+        if program.unit == "cashback_minor":
+            continue
+        earned += _reward_projections.compute_yearly_earned(program.id, month_start, month_end)
+    return earned
+
+
+def _compute_asset_liability_totals(balances: list[dict]) -> tuple[int, int]:
     total_assets_minor = 0
     total_liabilities_minor = 0
     for row in balances:
@@ -107,30 +143,44 @@ def get_finance_dashboard(today: Optional[date] = None) -> tuple[dict, list[dict
             total_assets_minor += balance
         else:
             total_liabilities_minor += abs(balance)
+    return total_assets_minor, total_liabilities_minor
 
-    cards = _projections.list_card_utilization()
-    total_limit = sum(card["credit_limit_minor"] for card in cards)
-    total_outstanding = sum(card["outstanding_minor"] for card in cards)
-    utilization_ratio = total_outstanding / total_limit if total_limit else 0.0
 
-    _, spent_month = _projections.compute_period_totals(month_start, month_end)
-    reward_rows = _reward_projections.list_all_balances()
-    total_reward_balance = sum(row["balance"] for row in reward_rows)
-
+def _compute_cashback_month_minor(today: date) -> int:
     cashback_month_minor = 0
+    month_start_bound, month_end_bound = month_bounds(today.isoformat())
     for program in _reward_programs.list_programs():
         if program.unit != "cashback_minor":
             continue
-        month_start_bound, month_end_bound = month_bounds(today.isoformat())
         cashback_month_minor += _reward_projections.compute_yearly_earned(
             program.id,
             month_start_bound,
             month_end_bound,
         )
+    return cashback_month_minor
 
+
+def _build_dashboard_payload(
+    *,
+    today: date,
+    month_start: str,
+    month_end: str,
+    created_statements: list[dict],
+) -> dict:
+    balances = _projections.list_account_balances()
+    total_assets_minor, total_liabilities_minor = _compute_asset_liability_totals(balances)
+
+    cards = _projections.list_card_utilization()
+    total_limit = sum(card["credit_limit_minor"] for card in cards)
+    total_outstanding = sum(card["outstanding_minor"] for card in cards)
+    total_available_credit = sum(card["available_limit_minor"] for card in cards)
+    utilization_ratio = total_outstanding / total_limit if total_limit else 0.0
+
+    income_month, spent_month = _projections.compute_period_totals(month_start, month_end)
+    cash_available_minor = _projections.compute_cash_available_minor()
+    total_reward_balance = sum(row["balance"] for row in _reward_projections.list_all_balances())
     upcoming_due = _build_upcoming_due(_cards.list_credit_cards(), today, created_statements)
-
-    recent = [_enrich_transaction(txn) for txn in _transactions.list_transactions(limit=10)]
+    cashback_month_minor = _compute_cashback_month_minor(today)
 
     return {
         "total_balance_minor": total_assets_minor - total_liabilities_minor,
@@ -139,15 +189,43 @@ def get_finance_dashboard(today: Optional[date] = None) -> tuple[dict, list[dict
         "total_assets": total_assets_minor / 100.0,
         "total_liabilities_minor": total_liabilities_minor,
         "total_liabilities": total_liabilities_minor / 100.0,
+        "cash_available_minor": cash_available_minor,
+        "cash_available": cash_available_minor / 100.0,
         "credit_utilization_ratio": utilization_ratio,
         "credit_utilization_percent": round(utilization_ratio * 100, 1),
+        "total_outstanding_minor": total_outstanding,
+        "total_outstanding": total_outstanding / 100.0,
+        "total_available_credit_minor": total_available_credit,
+        "total_available_credit": total_available_credit / 100.0,
+        "cards_near_due_count": _count_cards_near_due(upcoming_due, today),
+        "income_month": income_month,
         "spent_month": spent_month,
+        "savings_month": income_month - spent_month,
         "reward_balance": total_reward_balance,
+        "rewards_earned_month": _compute_rewards_earned_month(month_start, month_end),
         "cashback_earned_month_minor": cashback_month_minor,
         "cashback_earned_month": cashback_month_minor / 100.0,
+        "account_count": len(_accounts.list_accounts()),
+        "credit_card_count": len(_cards.list_credit_cards()),
         "upcoming_due_dates": upcoming_due,
-        "recent_transactions": recent,
-    }, created_statements
+        "recent_transactions": [
+            _enrich_transaction(txn) for txn in _transactions.list_transactions(limit=10)
+        ],
+        "latest_rewards": _serialize_latest_rewards(),
+    }
+
+
+def get_finance_dashboard(today: Optional[date] = None) -> tuple[dict, list[dict]]:
+    today = today or date.today()
+    month_start = today.replace(day=1).isoformat()
+    month_end = today.isoformat()
+    created_statements: list[dict] = []
+    return _build_dashboard_payload(
+        today=today,
+        month_start=month_start,
+        month_end=month_end,
+        created_statements=created_statements,
+    ), created_statements
 
 
 def list_accounts(include_archived: bool = False) -> list[dict]:

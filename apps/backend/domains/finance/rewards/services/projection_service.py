@@ -70,6 +70,9 @@ class RewardProjectionService:
         programs = self._programs.list_live(account_id)
         return [self.compute_program_balance(program.id) for program in programs]
 
+    def list_recent_events(self, limit: int = 5) -> list[dict]:
+        return self._events.list_recent(limit)
+
     def list_all_balances(self) -> list[dict]:
         rows = []
         for program in self._programs.list_live():

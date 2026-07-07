@@ -245,16 +245,64 @@ function computeMockFinanceDashboard(): FinanceDashboard {
     return sum + (openingMinor + deltaMinor) / 100
   }, 0)
 
+  const totalLiabilities = mockCreditCards.reduce((sum, card) => sum + (card.outstanding ?? 0), 0)
+
   return {
-    totalBalance: totalAssets,
+    totalBalance: totalAssets - totalLiabilities,
     totalAssets,
-    totalLiabilities: 0,
-    creditUtilizationPercent: 0,
+    totalLiabilities,
+    cashAvailable: totalAssets,
+    creditUtilizationPercent: 74.7,
+    totalOutstanding: 224000,
+    totalAvailableCredit: 76000,
+    cardsNearDueCount: 2,
+    incomeMonth: 85000,
     spentMonth,
-    rewardBalance: 0,
-    cashbackEarnedMonth: 0,
-    upcomingDueDates: [],
+    savingsMonth: 85000 - spentMonth,
+    rewardBalance: 12450,
+    rewardsEarnedMonth: 3200,
+    cashbackEarnedMonth: 1250,
+    accountCount: mockAccounts.length,
+    creditCardCount: mockCreditCards.length,
+    upcomingDueDates: mockCreditCards
+      .filter((card) => card.currentStatement && card.currentStatement.status !== 'paid')
+      .map((card) => ({
+        accountId: card.accountId,
+        cardName: card.name,
+        statementId: card.currentStatement!.id,
+        dueDate: card.currentStatement!.dueDate,
+        remainingDue: card.currentStatement!.remainingDue,
+        status: card.currentStatement!.status ?? 'due',
+      })),
     recentTransactions: mockTransactions.slice(0, 10),
+    latestRewards: [
+      {
+        id: 1,
+        programId: 1,
+        programName: 'Reward Points',
+        accountId: 2,
+        kind: 'earned',
+        direction: 'credit',
+        amount: 450,
+        unit: 'points',
+        amountDisplay: 450,
+        note: 'Dining spend',
+        occurredOn: '2026-06-28',
+      },
+      {
+        id: 2,
+        programId: 2,
+        programName: 'CashPoints',
+        accountId: 3,
+        kind: 'earned',
+        direction: 'credit',
+        amount: 12500,
+        unit: 'cashback_minor',
+        amountDisplay: 125,
+        note: 'June cashback',
+        occurredOn: '2026-06-25',
+      },
+    ],
   }
 }
 

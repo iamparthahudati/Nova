@@ -45,6 +45,26 @@ def get_reward_event_by_id(event_id: int) -> Optional[dict]:
     return dict(row) if row else None
 
 
+def list_recent_reward_events(limit: int = 5) -> list[dict]:
+    with _connection.connect(rows=True) as con:
+        rows = con.execute(
+            """
+            SELECT
+                e.*,
+                p.name AS program_name,
+                p.unit AS program_unit,
+                p.account_id AS account_id
+            FROM reward_events e
+            JOIN reward_programs p ON p.id = e.program_id
+            WHERE e.deleted_at IS NULL AND p.deleted_at IS NULL
+            ORDER BY e.occurred_on DESC, e.id DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
 def list_reward_events(
     program_id: int,
     limit: int = 50,

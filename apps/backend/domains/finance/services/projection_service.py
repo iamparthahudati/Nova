@@ -18,6 +18,7 @@ from ..repository_adapters import (
     SqliteStatementRepository,
     SqliteTransactionRepository,
 )
+from ..value_objects import AccountType, Classification
 
 
 class ProjectionService:
@@ -119,6 +120,19 @@ class ProjectionService:
     def compute_period_totals(self, start_date: str, end_date: str) -> tuple[float, float]:
         income_minor, expense_minor = self._transactions.totals_between(start_date, end_date)
         return income_minor / 100.0, expense_minor / 100.0
+
+    def compute_cash_available_minor(self) -> int:
+        liquid_types = {AccountType.CASH.value, AccountType.BANK.value, AccountType.WALLET.value}
+        total = 0
+        for account in self._accounts.list_live():
+            if account.type not in liquid_types:
+                continue
+            if account.classification != Classification.ASSET.value:
+                continue
+            balance = self.compute_account_balance(account.id)
+            if balance > 0:
+                total += balance
+        return total
 
     def list_account_balances(self) -> list[dict]:
         rows = []

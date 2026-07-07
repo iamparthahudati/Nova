@@ -2,12 +2,36 @@ export interface FinanceDashboard {
   totalBalance: number
   totalAssets: number
   totalLiabilities: number
+  cashAvailable: number
   creditUtilizationPercent: number
+  totalOutstanding: number
+  totalAvailableCredit: number
+  cardsNearDueCount: number
+  incomeMonth: number
   spentMonth: number
+  savingsMonth: number
   rewardBalance: number
+  rewardsEarnedMonth: number
   cashbackEarnedMonth: number
+  accountCount: number
+  creditCardCount: number
   upcomingDueDates: UpcomingDueDate[]
   recentTransactions: FinanceTransaction[]
+  latestRewards: LatestReward[]
+}
+
+export interface LatestReward {
+  id: number
+  programId: number
+  programName: string
+  accountId: number
+  kind: string
+  direction: string
+  amount: number
+  unit: string
+  amountDisplay: number
+  note?: string | null
+  occurredOn: string
 }
 
 export interface UpcomingDueDate {

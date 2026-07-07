@@ -16,14 +16,27 @@ class FinanceDashboardResponse(BaseModel):
     total_assets: float
     total_liabilities_minor: int
     total_liabilities: float
+    cash_available_minor: int
+    cash_available: float
     credit_utilization_ratio: float
     credit_utilization_percent: float
+    total_outstanding_minor: int
+    total_outstanding: float
+    total_available_credit_minor: int
+    total_available_credit: float
+    cards_near_due_count: int
+    income_month: float
     spent_month: float
+    savings_month: float
     reward_balance: int
+    rewards_earned_month: int
     cashback_earned_month_minor: int
     cashback_earned_month: float
+    account_count: int
+    credit_card_count: int
     upcoming_due_dates: list[dict[str, Any]]
     recent_transactions: list[dict[str, Any]]
+    latest_rewards: list[dict[str, Any]]
 
 
 class AccountResponse(BaseModel):

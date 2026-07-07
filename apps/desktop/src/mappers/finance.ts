@@ -23,6 +23,7 @@ import type {
   RewardProgram,
   TransactionsPage,
   UpcomingDueDate,
+  LatestReward,
 } from '@/view-models/finance'
 
 function mapTransaction(row: TransactionResponse | Record<string, unknown>): FinanceTransaction {
@@ -73,10 +74,19 @@ export function mapFinanceDashboard(response: FinanceDashboardResponse): Finance
     totalBalance: response.total_balance,
     totalAssets: response.total_assets,
     totalLiabilities: response.total_liabilities,
+    cashAvailable: response.cash_available,
     creditUtilizationPercent: response.credit_utilization_percent,
+    totalOutstanding: response.total_outstanding,
+    totalAvailableCredit: response.total_available_credit,
+    cardsNearDueCount: response.cards_near_due_count,
+    incomeMonth: response.income_month,
     spentMonth: response.spent_month,
+    savingsMonth: response.savings_month,
     rewardBalance: response.reward_balance,
+    rewardsEarnedMonth: response.rewards_earned_month,
     cashbackEarnedMonth: response.cashback_earned_month,
+    accountCount: response.account_count,
+    creditCardCount: response.credit_card_count,
     upcomingDueDates: response.upcoming_due_dates.map(
       (row): UpcomingDueDate => ({
         accountId: row.account_id as number,
@@ -89,6 +99,21 @@ export function mapFinanceDashboard(response: FinanceDashboardResponse): Finance
     ),
     recentTransactions: response.recent_transactions.map((txn) =>
       mapTransaction(txn as unknown as TransactionResponse),
+    ),
+    latestRewards: response.latest_rewards.map(
+      (row): LatestReward => ({
+        id: row.id as number,
+        programId: row.program_id as number,
+        programName: row.program_name as string,
+        accountId: row.account_id as number,
+        kind: row.kind as string,
+        direction: row.direction as string,
+        amount: row.amount as number,
+        unit: row.unit as string,
+        amountDisplay: row.amount_display as number,
+        note: row.note as string | null,
+        occurredOn: row.occurred_on as string,
+      }),
     ),
   }
 }

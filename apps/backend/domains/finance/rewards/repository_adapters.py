@@ -50,6 +50,9 @@ class SqliteRewardEventRepository:
         rows = event_store.list_reward_events(program_id, limit, offset)
         return [RewardEvent.from_row(row) for row in rows]
 
+    def list_recent(self, limit: int = 5) -> list[dict]:
+        return event_store.list_recent_reward_events(limit)
+
     def sum_by_direction(
         self,
         program_id: int,
