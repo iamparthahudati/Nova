@@ -10,6 +10,9 @@ class AccountType(str, Enum):
     BANK = "bank"
     WALLET = "wallet"
     CREDIT_CARD = "credit_card"
+    LOAN = "loan"
+    INVESTMENT = "investment"
+    OTHER = "other"
 
 
 class Classification(str, Enum):
@@ -37,8 +40,14 @@ class TransactionSource(str, Enum):
     MIGRATED_MONEY = "migrated_money"
 
 
-ASSET_ACCOUNT_TYPES = {AccountType.CASH, AccountType.BANK, AccountType.WALLET}
-LIABILITY_ACCOUNT_TYPES = {AccountType.CREDIT_CARD}
+ASSET_ACCOUNT_TYPES = {
+    AccountType.CASH,
+    AccountType.BANK,
+    AccountType.WALLET,
+    AccountType.INVESTMENT,
+    AccountType.OTHER,
+}
+LIABILITY_ACCOUNT_TYPES = {AccountType.CREDIT_CARD, AccountType.LOAN}
 
 KIND_DIRECTION: dict[TransactionKind, Direction] = {
     TransactionKind.EXPENSE: Direction.DEBIT,

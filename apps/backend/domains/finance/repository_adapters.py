@@ -42,6 +42,10 @@ class SqliteAccountRepository:
         row = account_store.archive_account(account_id)
         return Account.from_row(row) if row else None
 
+    def restore(self, account_id: int) -> Optional[Account]:
+        row = account_store.restore_account(account_id)
+        return Account.from_row(row) if row else None
+
     def count_live_transactions(self, account_id: int) -> int:
         return account_store.count_live_transactions(account_id)
 

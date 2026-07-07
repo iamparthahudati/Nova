@@ -90,6 +90,11 @@ def archive_account(account_id: int) -> tuple[dict, str]:
     return serialize_account(account), f"Account {account.name} archived."
 
 
+def restore_account(account_id: int) -> tuple[dict, str]:
+    account = _accounts.restore_account(account_id)
+    return serialize_account(account), f"Account {account.name} restored."
+
+
 def create_credit_card(
     name: str,
     credit_limit: float,

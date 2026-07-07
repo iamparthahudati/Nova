@@ -110,6 +110,47 @@ def migrate_finance_rewards(con) -> None:
         """)
 
 
+_ACCOUNT_TYPE_CHECK = "'cash','bank','wallet','credit_card','loan','investment','other'"
+
+
+def migrate_finance_account_types(con) -> None:
+    """Widen accounts.type CHECK to allow loan, investment, and other."""
+    row = con.execute(
+        "SELECT sql FROM sqlite_master WHERE type='table' AND name='accounts'",
+    ).fetchone()
+    if row is None:
+        return
+    create_sql = row[0] or ""
+    if "'investment'" in create_sql and "'loan'" in create_sql:
+        return
+    con.executescript(f"""
+        CREATE TABLE accounts_new (
+            id                    INTEGER PRIMARY KEY AUTOINCREMENT,
+            name                  TEXT    NOT NULL,
+            type                  TEXT    NOT NULL CHECK (type IN ({_ACCOUNT_TYPE_CHECK})),
+            classification        TEXT    NOT NULL DEFAULT 'asset'
+                                  CHECK (classification IN ('asset','liability')),
+            currency              TEXT    NOT NULL DEFAULT 'INR',
+            opening_balance_minor INTEGER NOT NULL DEFAULT 0,
+            opening_balance_on    TEXT    NOT NULL,
+            archived_at           TEXT,
+            created_at            TEXT    NOT NULL,
+            updated_at            TEXT    NOT NULL
+        );
+        INSERT INTO accounts_new
+        SELECT id, name, type, classification, currency,
+               opening_balance_minor, opening_balance_on,
+               archived_at, created_at, updated_at
+        FROM accounts;
+        DROP TABLE accounts;
+        ALTER TABLE accounts_new RENAME TO accounts;
+    """)
+    con.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_live_name
+            ON accounts(name COLLATE NOCASE) WHERE archived_at IS NULL
+    """)
+
+
 def migrate_finance_credit_cards(con) -> None:
     """Idempotent upgrade for credit-card tables and account type widening."""
     tables = {
@@ -220,11 +261,11 @@ def _migrate_accounts_type_credit_card(con) -> None:
     create_sql = row[0] or ""
     if "credit_card" in create_sql:
         return
-    con.executescript("""
+    con.executescript(f"""
         CREATE TABLE accounts_new (
             id                    INTEGER PRIMARY KEY AUTOINCREMENT,
             name                  TEXT    NOT NULL,
-            type                  TEXT    NOT NULL CHECK (type IN ('cash','bank','wallet','credit_card')),
+            type                  TEXT    NOT NULL CHECK (type IN ({_ACCOUNT_TYPE_CHECK})),
             classification        TEXT    NOT NULL DEFAULT 'asset'
                                   CHECK (classification IN ('asset','liability')),
             currency              TEXT    NOT NULL DEFAULT 'INR',

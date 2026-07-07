@@ -37,6 +37,8 @@ import type {
   StatementResponse,
   TransferMutationResponse,
   UpdateCategoryRequest,
+  UpdateCreditCardRequest,
+  UpdateMerchantRequest,
   UpdateStatementRequest,
   StatementsResponse,
   SystemStatusResponse,
@@ -45,6 +47,7 @@ import type {
   TransactionMutationResponse,
   TransactionsResponse,
   UpdateAccountRequest,
+  UpdateTransactionRequest,
 } from '@nova/api-contracts'
 import { apiDelete, apiGet, apiPatch, apiPost } from '@/lib/api-client'
 import { mapCalendar } from '@/mappers/calendar'
@@ -206,6 +209,10 @@ export async function archiveAccountRaw(accountId: number): Promise<AccountMutat
   return apiPost<Record<string, never>, AccountMutationResponse>(`/finance/accounts/${accountId}/archive`, {})
 }
 
+export async function restoreAccountRaw(accountId: number): Promise<AccountMutationResponse> {
+  return apiPost<Record<string, never>, AccountMutationResponse>(`/finance/accounts/${accountId}/restore`, {})
+}
+
 export async function fetchCreditCards(): Promise<FinanceCreditCard[]> {
   const response = await apiGet<CreditCardsResponse>('/finance/credit-cards')
   return response.cards.map(mapCreditCard)
@@ -218,6 +225,13 @@ export async function fetchCreditCard(accountId: number): Promise<FinanceCreditC
 
 export async function createCreditCardRaw(input: CreateCreditCardRequest): Promise<CreditCardMutationResponse> {
   return apiPost<CreateCreditCardRequest, CreditCardMutationResponse>('/finance/credit-cards', input)
+}
+
+export async function updateCreditCardRaw(
+  accountId: number,
+  input: UpdateCreditCardRequest,
+): Promise<CreditCardMutationResponse> {
+  return apiPatch<UpdateCreditCardRequest, CreditCardMutationResponse>(`/finance/credit-cards/${accountId}`, input)
 }
 
 export async function fetchStatements(accountId: number, limit = 24): Promise<FinanceStatement[]> {
@@ -259,6 +273,20 @@ export async function fetchFinanceTransactions(params?: {
 
 export async function createTransactionRaw(input: CreateTransactionRequest): Promise<TransactionMutationResponse> {
   return apiPost<CreateTransactionRequest, TransactionMutationResponse>('/finance/transactions', input)
+}
+
+export async function updateTransactionRaw(
+  transactionId: number,
+  input: UpdateTransactionRequest,
+): Promise<TransactionMutationResponse> {
+  return apiPatch<UpdateTransactionRequest, TransactionMutationResponse>(
+    `/finance/transactions/${transactionId}`,
+    input,
+  )
+}
+
+export async function deleteTransactionRaw(transactionId: number): Promise<TransactionMutationResponse> {
+  return apiDelete<TransactionMutationResponse>(`/finance/transactions/${transactionId}`)
 }
 
 export async function fetchRewardPrograms(accountId?: number): Promise<RewardProgram[]> {
@@ -306,6 +334,17 @@ export async function fetchMerchants(): Promise<FinanceMerchant[]> {
 
 export async function createMerchantRaw(input: CreateMerchantRequest): Promise<MerchantMutationResponse> {
   return apiPost<CreateMerchantRequest, MerchantMutationResponse>('/finance/merchants', input)
+}
+
+export async function updateMerchantRaw(
+  merchantId: number,
+  input: UpdateMerchantRequest,
+): Promise<MerchantMutationResponse> {
+  return apiPatch<UpdateMerchantRequest, MerchantMutationResponse>(`/finance/merchants/${merchantId}`, input)
+}
+
+export async function deleteMerchantRaw(merchantId: number): Promise<MerchantMutationResponse> {
+  return apiDelete<MerchantMutationResponse>(`/finance/merchants/${merchantId}`)
 }
 
 export async function createTransferRaw(input: CreateTransferRequest): Promise<TransferMutationResponse> {

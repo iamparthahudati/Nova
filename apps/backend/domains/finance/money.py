@@ -57,6 +57,6 @@ class OccurredOn:
 
 
 def classification_for_type(account_type: str) -> str:
-    if account_type == "credit_card":
+    if account_type in {"credit_card", "loan"}:
         return "liability"
     return "asset"

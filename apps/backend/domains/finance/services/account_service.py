@@ -81,3 +81,12 @@ class AccountService:
         if archived is None:
             raise AccountNotFoundError(account_id)
         return archived
+
+    def restore_account(self, account_id: int) -> Account:
+        account = self.get_account(account_id)
+        if account.archived_at is None:
+            raise FinanceValidationError("Account is not archived")
+        restored = self._accounts.restore(account_id)
+        if restored is None:
+            raise AccountNotFoundError(account_id)
+        return restored

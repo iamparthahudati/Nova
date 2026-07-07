@@ -96,6 +96,8 @@ export function mapAccount(row: AccountResponse): FinanceAccount {
     openingBalanceMinor: row.opening_balance_minor,
     openingBalanceOn: row.opening_balance_on,
     archivedAt: row.archived_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
     balance: row.balance,
     balanceMinor: row.balance_minor,
   }
@@ -112,6 +114,7 @@ export function mapCreditCard(row: CreditCardResponse): FinanceCreditCard {
     statementDay: row.statement_day,
     dueDayOffset: row.due_day_offset,
     autopay: row.autopay,
+    archivedAt: row.archived_at,
     balance: row.balance,
     outstanding: row.outstanding,
     utilizationPercent: row.utilization_percent,

@@ -646,6 +646,7 @@ export type EventsWebSocketEvent =
   | 'finance.account.created'
   | 'finance.account.updated'
   | 'finance.account.archived'
+  | 'finance.account.restored'
   | 'finance.credit_card.created'
   | 'finance.credit_card.updated'
   | 'finance.transaction.created'

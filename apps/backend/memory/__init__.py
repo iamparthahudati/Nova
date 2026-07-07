@@ -55,6 +55,7 @@ from .progress import (
 from .reminders import (
     add_reminder,
     count_reminders,
+    count_upcoming_reminders,
     get_due_reminders,
     get_latest_reminder,
     get_recent_reminders,
@@ -129,6 +130,7 @@ __all__ = [
     "get_due_reminders",
     "get_upcoming_reminders",
     "count_reminders",
+    "count_upcoming_reminders",
     "get_recent_reminders",
     "log_habit",
     "get_habits_today",

@@ -81,6 +81,18 @@ def archive_account(account_id: int) -> Optional[dict]:
     return get_account_by_id(account_id)
 
 
+def restore_account(account_id: int) -> Optional[dict]:
+    now = _connection.now()
+    with _connection.connect() as con:
+        cur = con.execute(
+            "UPDATE accounts SET archived_at = NULL, updated_at = ? WHERE id = ? AND archived_at IS NOT NULL",
+            (now, account_id),
+        )
+        if cur.rowcount == 0:
+            return None
+    return get_account_by_id(account_id)
+
+
 def count_live_transactions(account_id: int) -> int:
     with _connection.connect() as con:
         row = con.execute(

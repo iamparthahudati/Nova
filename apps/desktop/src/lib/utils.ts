@@ -12,3 +12,10 @@ export function formatINR(value: number): string {
     maximumFractionDigits: 0,
   }).format(value)
 }
+
+export function formatShortDate(value?: string | null): string | null {
+  if (!value) return null
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10)
+  return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+}

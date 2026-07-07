@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ScreenHeader } from '@/components/layout/screen-header'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -10,13 +11,21 @@ import { ApiError } from '@/lib/api-client'
 import { formatINR } from '@/lib/utils'
 
 export function FinanceStatementsScreen() {
+  const [searchParams] = useSearchParams()
   const accountsQuery = useAccounts(false)
   const cardsQuery = useCreditCards()
-  const cardAccountIds = new Set((cardsQuery.data ?? []).map((c) => c.accountId))
-  const cardAccounts = (accountsQuery.data ?? []).filter((a) => cardAccountIds.has(a.id))
+  const cardAccounts = cardsQuery.data ?? []
   const assetAccounts = (accountsQuery.data ?? []).filter((a) => a.classification === 'asset')
-  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
-  const activeAccountId = selectedAccountId ?? cardAccounts[0]?.id ?? null
+  const paramAccountId = searchParams.get('accountId')
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
+    paramAccountId ? Number(paramAccountId) : null,
+  )
+
+  useEffect(() => {
+    if (paramAccountId) setSelectedAccountId(Number(paramAccountId))
+  }, [paramAccountId])
+
+  const activeAccountId = selectedAccountId ?? cardAccounts[0]?.accountId ?? null
   const statements = useStatements(activeAccountId)
   const payStatement = usePayStatement()
   const updateStatement = useUpdateStatement()
@@ -64,9 +73,9 @@ export function FinanceStatementsScreen() {
           value={activeAccountId ?? ''}
           onChange={(e) => setSelectedAccountId(Number(e.target.value))}
         >
-          {cardAccounts.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
+          {cardAccounts.map((card) => (
+            <option key={card.accountId} value={card.accountId}>
+              {card.name}
             </option>
           ))}
         </select>

@@ -61,6 +61,16 @@ def get_upcoming_reminders(limit: int = 20) -> list[dict]:
     return [dict(r) for r in rows]
 
 
+def count_upcoming_reminders() -> int:
+    """Count reminders due today or later."""
+    today = datetime.now().strftime("%Y-%m-%d")
+    with _connection.connect() as con:
+        return con.execute(
+            "SELECT COUNT(*) FROM reminders WHERE remind_date >= ?",
+            (today,),
+        ).fetchone()[0]
+
+
 def count_reminders() -> int:
     with _connection.connect() as con:
         return con.execute("SELECT COUNT(*) FROM reminders").fetchone()[0]

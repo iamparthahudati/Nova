@@ -24,6 +24,7 @@ export const eventInvalidationMap: Partial<Record<EventsWebSocketEvent, Invalida
   'finance.account.created': financeInvalidations,
   'finance.account.updated': financeInvalidations,
   'finance.account.archived': financeInvalidations,
+  'finance.account.restored': financeInvalidations,
   'finance.credit_card.created': financeInvalidations,
   'finance.credit_card.updated': financeInvalidations,
   'finance.transaction.created': financeInvalidations,

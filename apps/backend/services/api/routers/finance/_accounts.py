@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from runtime.mutation_builders import (
     build_finance_account_archived,
     build_finance_account_created,
+    build_finance_account_restored,
     build_finance_account_updated,
     build_finance_credit_card_created,
     build_finance_credit_card_updated,
@@ -133,6 +134,25 @@ def post_archive_account(
     ) as exc:
         raise finance_error(exc) from None
     finalize_mutations([build_finance_account_archived(row)])
+    return AccountMutationResponse(
+        item=AccountResponse(**row),
+        meta=MutationMeta(message=message),
+    )
+
+
+@router.post("/accounts/{account_id}/restore", response_model=AccountMutationResponse)
+def post_restore_account(
+    account_id: int,
+    _ctx: RequestContext = Depends(get_request_context),
+) -> AccountMutationResponse:
+    try:
+        row, message = finance_cmd.restore_account(account_id)
+    except (
+        finance_cmd.AccountNotFoundError,
+        finance_cmd.FinanceValidationError,
+    ) as exc:
+        raise finance_error(exc) from None
+    finalize_mutations([build_finance_account_restored(row)])
     return AccountMutationResponse(
         item=AccountResponse(**row),
         meta=MutationMeta(message=message),

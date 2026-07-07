@@ -28,6 +28,8 @@ export interface FinanceAccount {
   openingBalanceMinor: number
   openingBalanceOn: string
   archivedAt?: string | null
+  createdAt?: string | null
+  updatedAt?: string | null
   balance?: number | null
   balanceMinor?: number | null
 }
@@ -42,6 +44,7 @@ export interface FinanceCreditCard {
   statementDay: number
   dueDayOffset: number
   autopay: boolean
+  archivedAt?: string | null
   balance?: number | null
   outstanding?: number | null
   utilizationPercent?: number | null

@@ -94,6 +94,52 @@ class FinanceIntegrationTestCase(unittest.TestCase):
         self.assertEqual(delete.status_code, 200)
         self.assertIn("finance.merchant.deleted", self.events)
 
+    def test_create_extended_account_types(self) -> None:
+        for account_type, classification in (
+            ("loan", "liability"),
+            ("investment", "asset"),
+            ("other", "asset"),
+        ):
+            response = self.client.post(
+                "/finance/accounts",
+                json={"name": f"Test {account_type}", "account_type": account_type},
+            )
+            self.assertEqual(response.status_code, 201, response.text)
+            item = response.json()["item"]
+            self.assertEqual(item["type"], account_type)
+            self.assertEqual(item["classification"], classification)
+            self.assertIn("finance.account.created", self.events)
+
+        invalid = self.client.post(
+            "/finance/accounts",
+            json={"name": "Bad", "account_type": "savings"},
+        )
+        self.assertEqual(invalid.status_code, 400)
+
+    def test_account_update_archive_and_restore_emit_events(self) -> None:
+        create = self.client.post(
+            "/finance/accounts",
+            json={"name": "Restore Me", "account_type": "wallet"},
+        )
+        self.assertEqual(create.status_code, 201)
+        account_id = create.json()["item"]["id"]
+
+        patch = self.client.patch(
+            f"/finance/accounts/{account_id}",
+            json={"name": "Restore Me Updated"},
+        )
+        self.assertEqual(patch.status_code, 200)
+        self.assertIn("finance.account.updated", self.events)
+
+        archive = self.client.post(f"/finance/accounts/{account_id}/archive", json={})
+        self.assertEqual(archive.status_code, 200)
+        self.assertIn("finance.account.archived", self.events)
+
+        restore = self.client.post(f"/finance/accounts/{account_id}/restore", json={})
+        self.assertEqual(restore.status_code, 200)
+        self.assertIsNone(restore.json()["item"]["archived_at"])
+        self.assertIn("finance.account.restored", self.events)
+
     def test_transfer_create_and_delete_emit_events(self) -> None:
         wallet = self.accounts.create_account("Wallet", "wallet", opening_balance_on="2026-01-01")
         create = self.client.post(

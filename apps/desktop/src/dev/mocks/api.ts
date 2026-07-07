@@ -16,6 +16,7 @@ import type {
   FinanceCreditCard,
   FinanceDashboard,
   FinanceStatement,
+  FinanceTransaction,
   RewardLedger,
   RewardProgram,
   TransactionsPage,
@@ -34,11 +35,112 @@ import {
 
 const latency = async (ms = 140) => new Promise((resolve) => setTimeout(resolve, ms))
 
+const mockCategories = [
+  { id: 1, name: 'Food', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+  { id: 2, name: 'Transport', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+  { id: 3, name: 'Salary', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+]
+const mockMerchants = [
+  { id: 1, name: 'Amazon', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+  { id: 2, name: 'Swiggy', created_at: '2026-01-01T00:00:00Z', updated_at: '2026-01-01T00:00:00Z' },
+]
+let nextCategoryId = 4
+let nextMerchantId = 3
+let nextTransactionId = 3
+const mockTransactions: FinanceTransaction[] = [
+  {
+    id: 1,
+    accountId: 1,
+    direction: 'debit',
+    kind: 'expense',
+    amount: 450,
+    amountMinor: 45_000,
+    categoryId: 1,
+    merchantId: 1,
+    note: 'Weekly groceries',
+    occurredOn: '2026-07-01',
+    accountName: 'Cash',
+    categoryName: 'Groceries',
+    merchantName: 'BigBasket',
+  },
+  {
+    id: 2,
+    accountId: 1,
+    direction: 'credit',
+    kind: 'income',
+    amount: 2500,
+    amountMinor: 250_000,
+    categoryId: 2,
+    merchantId: null,
+    note: 'Freelance payout',
+    occurredOn: '2026-07-03',
+    accountName: 'Cash',
+    categoryName: 'Salary',
+    merchantName: null,
+  },
+]
+const mockAccounts: FinanceAccount[] = [
+  {
+    id: 1,
+    name: 'Cash',
+    type: 'cash',
+    classification: 'asset',
+    currency: 'INR',
+    openingBalanceMinor: 1_250_000,
+    openingBalanceOn: '2026-01-01',
+    balance: 12500,
+  },
+]
+
+function monthBounds() {
+  const today = new Date()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  return {
+    start: `${today.getFullYear()}-${month}-01`,
+    end: today.toISOString().slice(0, 10),
+  }
+}
+
+function computeMockFinanceDashboard(): FinanceDashboard {
+  const { start, end } = monthBounds()
+  const spentMonth = mockTransactions
+    .filter((txn) => txn.kind === 'expense' && txn.occurredOn >= start && txn.occurredOn <= end)
+    .reduce((sum, txn) => sum + txn.amount, 0)
+
+  const totalAssets = mockAccounts.reduce((sum, account) => {
+    const openingMinor =
+      account.openingBalanceMinor > 0
+        ? account.openingBalanceMinor
+        : Math.round((account.balance ?? 0) * 100)
+    const deltaMinor = mockTransactions
+      .filter((txn) => txn.accountId === account.id)
+      .reduce(
+        (delta, txn) => delta + (txn.direction === 'credit' ? txn.amountMinor : -txn.amountMinor),
+        0,
+      )
+    return sum + (openingMinor + deltaMinor) / 100
+  }, 0)
+
+  return {
+    totalBalance: totalAssets,
+    totalAssets,
+    totalLiabilities: 0,
+    creditUtilizationPercent: 0,
+    spentMonth,
+    rewardBalance: 0,
+    cashbackEarnedMonth: 0,
+    upcomingDueDates: [],
+    recentTransactions: mockTransactions.slice(0, 10),
+  }
+}
+
 export async function getHome(): Promise<HomeViewModel> {
   await latency()
   const earned = mockSpending.filter((entry) => entry.type === 'earned').reduce((total, entry) => total + entry.amount, 0)
   const spent = mockSpending.filter((entry) => entry.type === 'spent').reduce((total, entry) => total + entry.amount, 0)
   const openTasks = mockTasks.filter((task) => task.status === 'open')
+  const today = new Date().toISOString().slice(0, 10)
+  const upcomingReminders = mockReminders.filter((reminder) => reminder.remindDate >= today)
 
   return {
     cards: [
@@ -46,7 +148,7 @@ export async function getHome(): Promise<HomeViewModel> {
       { id: 'earned_month', label: 'Monthly earned', value: String(earned), icon: 'wallet' },
       { id: 'spent_month', label: 'Monthly spent', value: String(spent), icon: 'activity' },
       { id: 'memory_count', label: 'Memories indexed', value: String(mockMemories.length), icon: 'brain' },
-      { id: 'reminder_count', label: 'Upcoming reminders', value: String(mockReminders.length), icon: 'bell' },
+      { id: 'reminder_count', label: 'Upcoming reminders', value: String(upcomingReminders.length), icon: 'bell' },
       {
         id: 'products_building',
         label: 'Products in progress',
@@ -70,7 +172,7 @@ export async function getHome(): Promise<HomeViewModel> {
       },
       {
         id: 'open_tasks',
-        title: "Today's tasks",
+        title: 'Open tasks',
         items: openTasks.map((task) => ({
           id: String(task.id),
           primary: task.text,
@@ -189,33 +291,12 @@ const mockFinanceAccount = {
 
 export async function getFinanceDashboard(): Promise<FinanceDashboard> {
   await latency()
-  return {
-    totalBalance: 12500,
-    totalAssets: 12500,
-    totalLiabilities: 0,
-    creditUtilizationPercent: 0,
-    spentMonth: 4200,
-    rewardBalance: 0,
-    cashbackEarnedMonth: 0,
-    upcomingDueDates: [],
-    recentTransactions: [],
-  }
+  return computeMockFinanceDashboard()
 }
 
 export async function getAccounts(): Promise<FinanceAccount[]> {
   await latency()
-  return [
-    {
-      id: 1,
-      name: 'Cash',
-      type: 'cash',
-      classification: 'asset',
-      currency: 'INR',
-      openingBalanceMinor: 0,
-      openingBalanceOn: '2026-01-01',
-      balance: 12500,
-    },
-  ]
+  return mockAccounts.map((account) => ({ ...account }))
 }
 
 export async function getCreditCards(): Promise<FinanceCreditCard[]> {
@@ -264,14 +345,107 @@ export async function createCreditCard(input: {
   }
 }
 
+export async function updateCreditCard(
+  accountId: number,
+  input: {
+    name?: string | null
+    credit_limit?: number | null
+    statement_day?: number | null
+    due_day_offset?: number | null
+    network?: string | null
+    last4?: string | null
+    autopay?: boolean | null
+  },
+) {
+  await latency()
+  return {
+    item: {
+      account_id: accountId,
+      name: input.name ?? 'Mock Card',
+      type: 'credit_card',
+      network: input.network ?? null,
+      last4: input.last4 ?? null,
+      credit_limit_minor: Math.round((input.credit_limit ?? 100000) * 100),
+      credit_limit: input.credit_limit ?? 100000,
+      statement_day: input.statement_day ?? 15,
+      due_day_offset: input.due_day_offset ?? 20,
+      autopay: input.autopay ?? false,
+      opening_balance_minor: 0,
+      opening_balance_on: '2026-01-01',
+      archived_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      balance_minor: 0,
+      balance: 0,
+      outstanding_minor: 0,
+      outstanding: 0,
+      utilization_ratio: 0,
+      utilization_percent: 0,
+      available_limit_minor: Math.round((input.credit_limit ?? 100000) * 100),
+      available_limit: input.credit_limit ?? 100000,
+    },
+    meta: { message: 'Credit card updated (mock).' },
+  }
+}
+
 export async function getStatements(_accountId: number): Promise<FinanceStatement[]> {
   await latency()
   return []
 }
 
-export async function getFinanceTransactions(): Promise<TransactionsPage> {
+export async function getFinanceTransactions(params?: {
+  accountId?: number
+  categoryId?: number
+  merchantId?: number
+  direction?: string
+  kind?: string
+  startDate?: string
+  endDate?: string
+  search?: string
+  limit?: number
+  offset?: number
+}): Promise<TransactionsPage> {
   await latency()
-  return { transactions: [], total: 0, limit: 50, offset: 0 }
+  let rows = [...mockTransactions]
+  if (params?.accountId) {
+    rows = rows.filter((txn) => txn.accountId === params.accountId)
+  }
+  if (params?.categoryId) {
+    rows = rows.filter((txn) => txn.categoryId === params.categoryId)
+  }
+  if (params?.merchantId) {
+    rows = rows.filter((txn) => txn.merchantId === params.merchantId)
+  }
+  if (params?.direction) {
+    rows = rows.filter((txn) => txn.direction === params.direction)
+  }
+  if (params?.kind) {
+    rows = rows.filter((txn) => txn.kind === params.kind)
+  }
+  if (params?.startDate) {
+    rows = rows.filter((txn) => txn.occurredOn >= params.startDate!)
+  }
+  if (params?.endDate) {
+    rows = rows.filter((txn) => txn.occurredOn <= params.endDate!)
+  }
+  if (params?.search) {
+    const query = params.search.toLowerCase()
+    rows = rows.filter(
+      (txn) =>
+        txn.note?.toLowerCase().includes(query) ||
+        txn.merchantName?.toLowerCase().includes(query) ||
+        txn.categoryName?.toLowerCase().includes(query),
+    )
+  }
+  const limit = params?.limit ?? 50
+  const offset = params?.offset ?? 0
+  const total = rows.length
+  return {
+    transactions: rows.slice(offset, offset + limit),
+    total,
+    limit,
+    offset,
+  }
 }
 
 export async function getRewardPrograms(): Promise<RewardProgram[]> {
@@ -296,40 +470,247 @@ export async function getCashbackSummary(): Promise<CashbackSummary> {
 
 export async function createAccount(input: { name: string; account_type: string; opening_balance?: number }) {
   await latency()
+  const classification = input.account_type === 'loan' || input.account_type === 'credit_card' ? 'liability' : 'asset'
+  const account: FinanceAccount = {
+    id: mockAccounts.length + 1,
+    name: input.name,
+    type: input.account_type,
+    classification,
+    currency: 'INR',
+    openingBalanceMinor: Math.round((input.opening_balance ?? 0) * 100),
+    openingBalanceOn: '2026-01-01',
+    createdAt: '2026-01-01T00:00:00Z',
+    updatedAt: '2026-01-01T00:00:00Z',
+    balance: input.opening_balance ?? 0,
+  }
+  mockAccounts.push(account)
   return {
-    item: { ...mockFinanceAccount, name: input.name, type: input.account_type },
+    item: {
+      ...mockFinanceAccount,
+      id: account.id,
+      name: input.name,
+      type: input.account_type,
+      classification,
+      opening_balance_minor: account.openingBalanceMinor,
+      balance: account.balance,
+      balance_minor: account.openingBalanceMinor,
+    },
     meta: { message: 'Account created (mock).' },
   }
 }
 
-export async function archiveAccount(_accountId: number) {
+export async function updateAccount(
+  accountId: number,
+  input: { name?: string | null; opening_balance?: number | null; opening_balance_on?: string | null },
+) {
   await latency()
-  return { item: mockFinanceAccount, meta: { message: 'Account archived (mock).' } }
+  const account = mockAccounts.find((row) => row.id === accountId)
+  if (!account) throw new Error('Account not found')
+  if (input.name) account.name = input.name
+  if (input.opening_balance != null) {
+    account.openingBalanceMinor = Math.round(input.opening_balance * 100)
+    account.balance = input.opening_balance
+  }
+  if (input.opening_balance_on) account.openingBalanceOn = input.opening_balance_on
+  return {
+    item: {
+      ...mockFinanceAccount,
+      id: account.id,
+      name: account.name,
+      type: account.type,
+      classification: account.classification,
+      opening_balance_minor: account.openingBalanceMinor,
+      opening_balance_on: account.openingBalanceOn,
+      archived_at: account.archivedAt ?? null,
+      balance: account.balance,
+      balance_minor: account.openingBalanceMinor,
+    },
+    meta: { message: 'Account updated (mock).' },
+  }
 }
 
-export async function createTransaction(_input: unknown) {
+export async function archiveAccount(accountId: number) {
   await latency()
-  return { meta: { message: 'Transaction created (mock).' } }
+  const account = mockAccounts.find((row) => row.id === accountId)
+  if (account) account.archivedAt = '2026-07-01T00:00:00Z'
+  return {
+    item: {
+      ...mockFinanceAccount,
+      id: accountId,
+      archived_at: '2026-07-01T00:00:00Z',
+    },
+    meta: { message: 'Account archived (mock).' },
+  }
+}
+
+export async function restoreAccount(accountId: number) {
+  await latency()
+  const account = mockAccounts.find((row) => row.id === accountId)
+  if (account) account.archivedAt = null
+  return {
+    item: {
+      ...mockFinanceAccount,
+      id: accountId,
+      archived_at: null,
+    },
+    meta: { message: 'Account restored (mock).' },
+  }
+}
+
+export async function createTransaction(input: {
+  account_id: number
+  kind: string
+  amount: number
+  occurred_on: string
+  category_id?: number | null
+  merchant_id?: number | null
+  note?: string | null
+}) {
+  await latency()
+  const account = mockAccounts.find((row) => row.id === input.account_id)
+  const category = mockCategories.find((row) => row.id === input.category_id)
+  const merchant = mockMerchants.find((row) => row.id === input.merchant_id)
+  const direction = input.kind === 'income' ? 'credit' : 'debit'
+  const txn: FinanceTransaction = {
+    id: nextTransactionId++,
+    accountId: input.account_id,
+    direction,
+    kind: input.kind,
+    amount: input.amount,
+    amountMinor: Math.round(input.amount * 100),
+    categoryId: input.category_id ?? null,
+    merchantId: input.merchant_id ?? null,
+    note: input.note ?? null,
+    occurredOn: input.occurred_on,
+    accountName: account?.name ?? `Account ${input.account_id}`,
+    categoryName: category?.name ?? null,
+    merchantName: merchant?.name ?? null,
+  }
+  mockTransactions.unshift(txn)
+  return {
+    item: txn,
+    meta: { message: `Transaction logged on ${txn.accountName}.` },
+  }
+}
+
+export async function updateTransaction(
+  transactionId: number,
+  input: {
+    amount?: number | null
+    category_id?: number | null
+    merchant_id?: number | null
+    note?: string | null
+    occurred_on?: string | null
+  },
+) {
+  await latency()
+  const index = mockTransactions.findIndex((row) => row.id === transactionId)
+  if (index === -1) throw new Error('Transaction not found.')
+  const current = mockTransactions[index]
+  const category = mockCategories.find((row) => row.id === (input.category_id ?? current.categoryId))
+  const merchant = mockMerchants.find((row) => row.id === (input.merchant_id ?? current.merchantId))
+  const amount = input.amount ?? current.amount
+  const updated: FinanceTransaction = {
+    ...current,
+    amount,
+    amountMinor: Math.round(amount * 100),
+    categoryId: input.category_id ?? current.categoryId ?? null,
+    merchantId: input.merchant_id ?? current.merchantId ?? null,
+    note: input.note ?? current.note ?? null,
+    occurredOn: input.occurred_on ?? current.occurredOn,
+    categoryName: category?.name ?? null,
+    merchantName: merchant?.name ?? null,
+  }
+  mockTransactions[index] = updated
+  return {
+    item: updated,
+    meta: { message: 'Transaction updated (mock).' },
+  }
+}
+
+export async function deleteTransaction(transactionId: number) {
+  await latency()
+  const index = mockTransactions.findIndex((row) => row.id === transactionId)
+  if (index === -1) throw new Error('Transaction not found.')
+  const [removed] = mockTransactions.splice(index, 1)
+  return {
+    item: removed,
+    meta: { message: 'Transaction deleted (mock).' },
+  }
 }
 
 export async function getCategories() {
   await latency()
-  return [{ id: 1, name: 'Food' }]
+  return mockCategories.map((row) => ({ ...row }))
 }
 
 export async function createCategory(input: { name: string }) {
   await latency()
-  return { item: { id: 2, name: input.name, created_at: '', updated_at: '' }, meta: { message: 'Category created (mock).' } }
+  const item = {
+    id: nextCategoryId++,
+    name: input.name,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+  mockCategories.push(item)
+  return { item, meta: { message: 'Category created (mock).' } }
+}
+
+export async function updateCategory(categoryId: number, input: { name: string }) {
+  await latency()
+  const index = mockCategories.findIndex((row) => row.id === categoryId)
+  if (index === -1) throw new Error('Category not found.')
+  mockCategories[index] = {
+    ...mockCategories[index],
+    name: input.name,
+    updated_at: new Date().toISOString(),
+  }
+  return { item: mockCategories[index], meta: { message: 'Category updated (mock).' } }
+}
+
+export async function deleteCategory(categoryId: number) {
+  await latency()
+  const index = mockCategories.findIndex((row) => row.id === categoryId)
+  if (index === -1) throw new Error('Category not found.')
+  const [item] = mockCategories.splice(index, 1)
+  return { item, meta: { message: 'Category deleted (mock).' } }
 }
 
 export async function getMerchants() {
   await latency()
-  return [{ id: 1, name: 'Amazon' }]
+  return mockMerchants.map((row) => ({ ...row }))
 }
 
 export async function createMerchant(input: { name: string }) {
   await latency()
-  return { item: { id: 2, name: input.name, created_at: '', updated_at: '' }, meta: { message: 'Merchant created (mock).' } }
+  const item = {
+    id: nextMerchantId++,
+    name: input.name,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }
+  mockMerchants.push(item)
+  return { item, meta: { message: 'Merchant created (mock).' } }
+}
+
+export async function updateMerchant(merchantId: number, input: { name: string }) {
+  await latency()
+  const index = mockMerchants.findIndex((row) => row.id === merchantId)
+  if (index === -1) throw new Error('Merchant not found.')
+  mockMerchants[index] = {
+    ...mockMerchants[index],
+    name: input.name,
+    updated_at: new Date().toISOString(),
+  }
+  return { item: mockMerchants[index], meta: { message: 'Merchant updated (mock).' } }
+}
+
+export async function deleteMerchant(merchantId: number) {
+  await latency()
+  const index = mockMerchants.findIndex((row) => row.id === merchantId)
+  if (index === -1) throw new Error('Merchant not found.')
+  const [item] = mockMerchants.splice(index, 1)
+  return { item, meta: { message: 'Merchant deleted (mock).' } }
 }
 
 export async function createTransfer(_input: unknown) {

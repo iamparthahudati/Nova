@@ -80,6 +80,16 @@ def build_finance_account_archived(row: dict) -> MutationEvent:
     )
 
 
+def build_finance_account_restored(row: dict) -> MutationEvent:
+    return MutationEvent(
+        event_type="finance.account.restored",
+        entity_type="account",
+        operation="restore",
+        entity=row,
+        metadata=_entity_metadata(row),
+    )
+
+
 def build_finance_credit_card_created(row: dict) -> MutationEvent:
     metadata = {"entity_id": row.get("account_id")}
     return MutationEvent(

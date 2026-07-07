@@ -82,6 +82,21 @@ class FinanceDomainTestCase(unittest.TestCase):
                 today=self.today,
             )
 
+        restored = self.accounts.restore_account(account.id)
+        self.assertIsNone(restored.archived_at)
+
+    def test_extended_account_types(self) -> None:
+        loan = self.accounts.create_account("Home Loan", "loan", today=self.today)
+        investment = self.accounts.create_account("Mutual Fund", "investment", today=self.today)
+        other = self.accounts.create_account("Misc Asset", "other", today=self.today)
+
+        self.assertEqual(loan.classification, "liability")
+        self.assertEqual(investment.classification, "asset")
+        self.assertEqual(other.classification, "asset")
+
+        with self.assertRaises(FinanceValidationError):
+            self.accounts.create_account("Bad", "savings", today=self.today)
+
     def test_category_and_merchant_crud(self) -> None:
         category = self.categories.create_category("Food")
         merchant = self.merchants.create_merchant("Swiggy")

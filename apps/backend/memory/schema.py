@@ -119,7 +119,7 @@ def init_db() -> None:
             CREATE TABLE IF NOT EXISTS accounts (
                 id                    INTEGER PRIMARY KEY AUTOINCREMENT,
                 name                  TEXT    NOT NULL,
-                type                  TEXT    NOT NULL CHECK (type IN ('cash','bank','wallet','credit_card')),
+                type                  TEXT    NOT NULL CHECK (type IN ('cash','bank','wallet','credit_card','loan','investment','other')),
                 classification        TEXT    NOT NULL DEFAULT 'asset'
                                       CHECK (classification IN ('asset','liability')),
                 currency              TEXT    NOT NULL DEFAULT 'INR',
@@ -248,6 +248,7 @@ def init_db() -> None:
         _migrate_memories(con)
         _migrate_reminders(con)
         from .finance.migrations import (
+            migrate_finance_account_types,
             migrate_finance_cashback,
             migrate_finance_credit_cards,
             migrate_finance_indexes,
@@ -255,6 +256,7 @@ def init_db() -> None:
         )
 
         migrate_finance_credit_cards(con)
+        migrate_finance_account_types(con)
         migrate_finance_rewards(con)
         migrate_finance_cashback(con)
 

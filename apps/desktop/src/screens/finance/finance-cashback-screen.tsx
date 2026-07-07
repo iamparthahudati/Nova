@@ -1,18 +1,43 @@
+import { Link } from 'react-router-dom'
 import { ScreenHeader } from '@/components/layout/screen-header'
 import { Badge } from '@/components/ui/badge'
+import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { QueryBoundary } from '@/components/query-boundary'
 import { useCashbackSummary } from '@/hooks/use-finance'
-import { formatINR } from '@/lib/utils'
+import { cn, formatINR } from '@/lib/utils'
 
 export function FinanceCashbackScreen() {
   const cashback = useCashbackSummary()
 
   return (
     <section>
-      <ScreenHeader title="Cashback" description="Active rules and monthly earned from reward projections." />
-      <QueryBoundary query={cashback} loadingMessage="Loading cashback…" emptyMessage="No cashback rules configured.">
-        {(data) => (
+      <ScreenHeader
+        title="Cashback"
+        description="Cashback is earned on credit card spend when cashback rules are linked to a card's reward program. Cash and bank transactions do not earn cashback here."
+      />
+      <QueryBoundary query={cashback} loadingMessage="Loading cashback…">
+        {(data) => {
+          if (data.rules.length === 0) {
+            return (
+              <div className="rounded-md border border-dashed border-border p-8 text-center">
+                <p className="text-sm font-medium">No cashback rules configured</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Set up a credit card, attach a cashback reward program, and define earn rules. Monthly earned totals
+                  update when matching credit card transactions are logged.
+                </p>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <Link to="/finance/credit-cards" className={cn(buttonVariants({ size: 'sm' }))}>
+                    Credit cards
+                  </Link>
+                  <Link to="/finance/rewards" className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}>
+                    Rewards
+                  </Link>
+                </div>
+              </div>
+            )
+          }
+          return (
           <>
             <Card className="mb-4">
               <CardHeader>
@@ -64,7 +89,8 @@ export function FinanceCashbackScreen() {
               ))}
             </div>
           </>
-        )}
+          )
+        }}
       </QueryBoundary>
     </section>
   )

@@ -7,6 +7,9 @@ import {
   LayoutDashboard,
   Percent,
   Receipt,
+  Store,
+  Tags,
+  TrendingUp,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -14,10 +17,13 @@ const financeNav = [
   { label: 'Dashboard', path: '/finance', icon: LayoutDashboard, end: true },
   { label: 'Accounts', path: '/finance/accounts', icon: Banknote },
   { label: 'Credit Cards', path: '/finance/credit-cards', icon: CreditCard },
-  { label: 'Statements', path: '/finance/statements', icon: FileText },
+  { label: 'Categories', path: '/finance/categories', icon: Tags },
+  { label: 'Merchants', path: '/finance/merchants', icon: Store },
   { label: 'Transactions', path: '/finance/transactions', icon: Receipt },
+  { label: 'Statements', path: '/finance/statements', icon: FileText },
   { label: 'Rewards', path: '/finance/rewards', icon: Gift },
   { label: 'Cashback', path: '/finance/cashback', icon: Percent },
+  { label: 'Investments', path: '/finance/investments', icon: TrendingUp },
 ]
 
 export function FinanceLayout() {

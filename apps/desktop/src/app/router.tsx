@@ -5,8 +5,11 @@ import { CalendarScreen } from '@/screens/calendar-screen'
 import { ChatScreen } from '@/screens/chat-screen'
 import { FinanceAccountsScreen } from '@/screens/finance/finance-accounts-screen'
 import { FinanceCashbackScreen } from '@/screens/finance/finance-cashback-screen'
+import { FinanceCategoriesScreen } from '@/screens/finance/finance-categories-screen'
 import { FinanceCreditCardsScreen } from '@/screens/finance/finance-credit-cards-screen'
 import { FinanceDashboardScreen } from '@/screens/finance/finance-dashboard-screen'
+import { FinanceInvestmentsScreen } from '@/screens/finance/finance-investments-screen'
+import { FinanceMerchantsScreen } from '@/screens/finance/finance-merchants-screen'
 import { FinanceRewardsScreen } from '@/screens/finance/finance-rewards-screen'
 import { FinanceStatementsScreen } from '@/screens/finance/finance-statements-screen'
 import { FinanceTransactionsScreen } from '@/screens/finance/finance-transactions-screen'
@@ -36,10 +39,13 @@ export const router = createHashRouter([
           { index: true, element: <FinanceDashboardScreen /> },
           { path: 'accounts', element: <FinanceAccountsScreen /> },
           { path: 'credit-cards', element: <FinanceCreditCardsScreen /> },
-          { path: 'statements', element: <FinanceStatementsScreen /> },
+          { path: 'categories', element: <FinanceCategoriesScreen /> },
+          { path: 'merchants', element: <FinanceMerchantsScreen /> },
           { path: 'transactions', element: <FinanceTransactionsScreen /> },
+          { path: 'statements', element: <FinanceStatementsScreen /> },
           { path: 'rewards', element: <FinanceRewardsScreen /> },
           { path: 'cashback', element: <FinanceCashbackScreen /> },
+          { path: 'investments', element: <FinanceInvestmentsScreen /> },
         ],
       },
       { path: 'products', element: <ProductsScreen /> },

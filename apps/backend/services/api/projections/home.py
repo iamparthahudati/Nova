@@ -20,7 +20,7 @@ def build_home_response() -> HomeResponse:
     earned, spent = memory.get_money_totals_between(month_start, today)
     open_tasks = memory.count_open_tasks()
     memory_count = memory.count_active_memories()
-    reminder_count = memory.count_reminders()
+    reminder_count = memory.count_upcoming_reminders()
     products = memory.get_products()
     products_building = sum(1 for p in products if p.get("status") == "building")
 
@@ -87,10 +87,19 @@ def build_home_response() -> HomeResponse:
         )
         for idx, e in enumerate(events)
     ]
+    if unavailable and not calendar_items:
+        calendar_items = [
+            HomePanelItem(
+                id="calendar-unavailable",
+                primary="Calendar unavailable",
+                secondary="Could not load today's events.",
+                meta={"unavailable": True},
+            )
+        ]
 
     panels = [
         HomePanel(id="reminders", title="Upcoming reminders", items=reminder_items),
-        HomePanel(id="open_tasks", title="Today's tasks", items=task_items),
+        HomePanel(id="open_tasks", title="Open tasks", items=task_items),
         HomePanel(
             id="calendar",
             title="Calendar events",

@@ -1,72 +1,140 @@
-import { useState } from 'react'
-import { Plus } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { Plus, Receipt } from 'lucide-react'
 import { ScreenHeader } from '@/components/layout/screen-header'
-import { Amount } from '@/components/finance/metric-card'
-import { Badge } from '@/components/ui/badge'
+import { TransactionCard } from '@/components/finance/transaction-card'
+import { TransactionFilters, type TransactionFilterState } from '@/components/finance/transaction-filters'
+import { TransactionForm, type TransactionFormValues } from '@/components/finance/transaction-form'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { QueryBoundary } from '@/components/query-boundary'
 import { useAccounts, useCategories, useFinanceTransactions, useMerchants } from '@/hooks/use-finance'
-import { useCreateCategory, useCreateMerchant, useCreateTransaction } from '@/hooks/use-finance-mutations'
+import {
+  useCreateCategory,
+  useCreateMerchant,
+  useCreateTransaction,
+  useDeleteTransaction,
+  useUpdateTransaction,
+} from '@/hooks/use-finance-mutations'
 import { ApiError } from '@/lib/api-client'
 
+const EMPTY_FILTERS: TransactionFilterState = {
+  kind: '',
+  startDate: '',
+  endDate: '',
+  search: '',
+}
+
+const EMPTY_FORM: TransactionFormValues = {
+  accountId: '',
+  kind: 'expense',
+  amount: '',
+  occurredOn: new Date().toISOString().slice(0, 10),
+  note: '',
+  categoryId: '',
+  merchantId: '',
+}
+
 export function FinanceTransactionsScreen() {
-  const [accountId, setAccountId] = useState<number | undefined>()
-  const [direction, setDirection] = useState<string>('')
-  const [search, setSearch] = useState('')
+  const [searchParams] = useSearchParams()
+  const paramAccountId = searchParams.get('accountId')
+  const [filters, setFilters] = useState<TransactionFilterState>({
+    ...EMPTY_FILTERS,
+    accountId: paramAccountId ? Number(paramAccountId) : undefined,
+  })
   const [offset, setOffset] = useState(0)
   const limit = 25
   const accountsQuery = useAccounts(false)
   const categoriesQuery = useCategories()
   const merchantsQuery = useMerchants()
   const transactions = useFinanceTransactions({
-    accountId,
-    direction: direction || undefined,
-    search: search || undefined,
+    accountId: filters.accountId,
+    categoryId: filters.categoryId,
+    merchantId: filters.merchantId,
+    kind: filters.kind || undefined,
+    startDate: filters.startDate || undefined,
+    endDate: filters.endDate || undefined,
+    search: filters.search || undefined,
     limit,
     offset,
   })
   const createTransaction = useCreateTransaction()
+  const updateTransaction = useUpdateTransaction()
+  const deleteTransaction = useDeleteTransaction()
   const createCategory = useCreateCategory()
   const createMerchant = useCreateMerchant()
   const [showForm, setShowForm] = useState(false)
-  const [formAccountId, setFormAccountId] = useState<number | ''>('')
-  const [categoryId, setCategoryId] = useState<number | ''>('')
-  const [merchantId, setMerchantId] = useState<number | ''>('')
-  const [kind, setKind] = useState('expense')
-  const [amount, setAmount] = useState('')
-  const [occurredOn, setOccurredOn] = useState(new Date().toISOString().slice(0, 10))
-  const [note, setNote] = useState('')
+  const [formValues, setFormValues] = useState<TransactionFormValues>(EMPTY_FORM)
   const [feedback, setFeedback] = useState<string | null>(null)
+  const mutationBusy =
+    createTransaction.isPending || updateTransaction.isPending || deleteTransaction.isPending
 
-  async function handleCreate(event: React.FormEvent) {
-    event.preventDefault()
-    if (!formAccountId) return
+  useEffect(() => {
+    if (paramAccountId) {
+      setFilters((current) => ({ ...current, accountId: Number(paramAccountId) }))
+    }
+  }, [paramAccountId])
+
+  function resetFilters() {
+    setOffset(0)
+    setFilters({ ...EMPTY_FILTERS, accountId: paramAccountId ? Number(paramAccountId) : undefined })
+  }
+
+  function handleFilterChange(next: TransactionFilterState) {
+    setOffset(0)
+    setFilters(next)
+  }
+
+  async function handleCreate(values: TransactionFormValues) {
+    if (!values.accountId) return
     setFeedback(null)
+    const savedAccountId = Number(values.accountId)
+    const accountName =
+      (accountsQuery.data ?? []).find((account) => account.id === savedAccountId)?.name ?? 'account'
     try {
       const result = await createTransaction.mutateAsync({
-        account_id: Number(formAccountId),
-        kind,
-        amount: Number(amount),
-        occurred_on: occurredOn,
-        note: note || undefined,
-        category_id: categoryId ? Number(categoryId) : undefined,
-        merchant_id: merchantId ? Number(merchantId) : undefined,
+        account_id: savedAccountId,
+        kind: values.kind,
+        amount: Number(values.amount),
+        occurred_on: values.occurredOn,
+        note: values.note || undefined,
+        category_id: values.categoryId ? Number(values.categoryId) : undefined,
+        merchant_id: values.merchantId ? Number(values.merchantId) : undefined,
       })
-      setAmount('')
-      setNote('')
+      setFormValues({ ...EMPTY_FORM, accountId: savedAccountId })
       setShowForm(false)
-      setFeedback(result.meta.message)
+      setOffset(0)
+      setFilters((current) => ({ ...current, accountId: savedAccountId, kind: '', search: '' }))
+      setFeedback(`${result.meta.message} Showing ${accountName} below.`)
     } catch (error) {
       setFeedback(error instanceof ApiError ? error.message : 'Could not create transaction.')
     }
+  }
+
+  async function handleUpdate(transactionId: number, values: TransactionFormValues) {
+    const result = await updateTransaction.mutateAsync({
+      transactionId,
+      input: {
+        amount: Number(values.amount),
+        occurred_on: values.occurredOn,
+        note: values.note || null,
+        category_id: values.categoryId ? Number(values.categoryId) : null,
+        merchant_id: values.merchantId ? Number(values.merchantId) : null,
+      },
+    })
+    setFeedback(result.meta.message)
+  }
+
+  async function handleDelete(transactionId: number) {
+    const result = await deleteTransaction.mutateAsync(transactionId)
+    setFeedback(result.meta.message)
   }
 
   return (
     <section>
       <ScreenHeader
         title="Transactions"
-        description="Search and filter ledger entries from the backend."
+        description="Search, filter, and manage ledger entries from the backend."
         actions={
           <Button size="sm" onClick={() => setShowForm((open) => !open)}>
             <Plus className="h-4 w-4" />
@@ -74,195 +142,115 @@ export function FinanceTransactionsScreen() {
           </Button>
         }
       />
-      <div className="mb-4 flex flex-wrap gap-2">
-        <select
-          className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-          value={accountId ?? ''}
-          onChange={(e) => {
-            setOffset(0)
-            setAccountId(e.target.value ? Number(e.target.value) : undefined)
-          }}
-        >
-          <option value="">All accounts</option>
-          {(accountsQuery.data ?? []).map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </select>
-        <select
-          className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-          value={direction}
-          onChange={(e) => {
-            setOffset(0)
-            setDirection(e.target.value)
-          }}
-        >
-          <option value="">All directions</option>
-          <option value="debit">Debit</option>
-          <option value="credit">Credit</option>
-        </select>
-        <input
-          className="min-w-[12rem] flex-1 rounded-md border border-border bg-background px-3 py-2 text-sm"
-          placeholder="Search notes…"
-          value={search}
-          onChange={(e) => {
-            setOffset(0)
-            setSearch(e.target.value)
-          }}
-        />
-      </div>
-      {feedback ? <p className="mb-4 text-sm text-emerald-400">{feedback}</p> : null}
+      <TransactionFilters
+        filters={filters}
+        accounts={accountsQuery.data ?? []}
+        categories={categoriesQuery.data ?? []}
+        merchants={merchantsQuery.data ?? []}
+        onChange={handleFilterChange}
+        onReset={resetFilters}
+      />
+      {feedback ? <p className="mb-4 mt-4 text-sm text-emerald-400">{feedback}</p> : null}
       {showForm ? (
-        <Card className="mb-4">
+        <Card className="mb-4 mt-4">
           <CardHeader>
             <CardTitle>New transaction</CardTitle>
           </CardHeader>
           <CardContent>
-            <form className="grid gap-3 sm:grid-cols-2" onSubmit={handleCreate}>
-              <select
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-                value={formAccountId}
-                onChange={(e) => setFormAccountId(Number(e.target.value))}
-                required
-              >
-                <option value="">Select account</option>
-                {(accountsQuery.data ?? []).map((account) => (
-                  <option key={account.id} value={account.id}>
-                    {account.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-                value={kind}
-                onChange={(e) => setKind(e.target.value)}
-              >
-                <option value="expense">Expense</option>
-                <option value="income">Income</option>
-                <option value="adjustment">Adjustment</option>
-              </select>
-              <select
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-                value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : '')}
-              >
-                <option value="">No category</option>
-                {(categoriesQuery.data ?? []).map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-                value={merchantId}
-                onChange={(e) => setMerchantId(e.target.value ? Number(e.target.value) : '')}
-              >
-                <option value="">No merchant</option>
-                {(merchantsQuery.data ?? []).map((merchant) => (
-                  <option key={merchant.id} value={merchant.id}>
-                    {merchant.name}
-                  </option>
-                ))}
-              </select>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-                placeholder="Amount"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                required
-              />
-              <input
-                type="date"
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-                value={occurredOn}
-                onChange={(e) => setOccurredOn(e.target.value)}
-                required
-              />
-              <input
-                className="rounded-md border border-border bg-background px-3 py-2 text-sm sm:col-span-2"
-                placeholder="Note"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-              />
-              <Button type="submit" size="sm" disabled={createTransaction.isPending}>
-                Save
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  const name = window.prompt('Category name')
-                  if (!name) return
-                  await createCategory.mutateAsync({ name })
-                }}
-              >
-                Add category
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  const name = window.prompt('Merchant name')
-                  if (!name) return
-                  await createMerchant.mutateAsync({ name })
-                }}
-              >
-                Add merchant
-              </Button>
-            </form>
+            <TransactionForm
+              mode="create"
+              values={formValues}
+              accounts={accountsQuery.data ?? []}
+              categories={categoriesQuery.data ?? []}
+              merchants={merchantsQuery.data ?? []}
+              busy={mutationBusy}
+              onChange={setFormValues}
+              onSubmit={handleCreate}
+              onCancel={() => setShowForm(false)}
+              onCreateCategory={async (name) => {
+                const result = await createCategory.mutateAsync({ name })
+                return result.category
+              }}
+              onCreateMerchant={async (name) => {
+                const result = await createMerchant.mutateAsync({ name })
+                return result.merchant
+              }}
+            />
           </CardContent>
         </Card>
       ) : null}
-      <QueryBoundary query={transactions} loadingMessage="Loading transactions…" emptyMessage="No transactions found.">
-        {(data) => (
-          <>
-            <div className="space-y-2">
-              {data.transactions.map((txn) => (
-                <div
-                  key={txn.id}
-                  className="flex items-center justify-between rounded-md border border-border bg-muted/30 p-3"
-                >
-                  <div>
-                    <p className="text-sm font-medium">{txn.note || txn.merchantName || txn.kind}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {txn.accountName} · {txn.occurredOn}
-                      {txn.categoryName ? ` · ${txn.categoryName}` : ''}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline">{txn.direction}</Badge>
-                    <Amount value={txn.amount} direction={txn.kind} />
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-xs text-muted-foreground">
-                Showing {data.offset + 1}–{Math.min(data.offset + data.limit, data.total)} of {data.total}
-              </p>
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - limit))}>
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled={offset + limit >= data.total}
-                  onClick={() => setOffset(offset + limit)}
-                >
-                  Next
+      <QueryBoundary
+        query={transactions}
+        isEmpty={(data) => data.transactions.length === 0}
+        loadingMessage="Loading transactions…"
+        emptyMessage="No transactions match these filters."
+      >
+        {(data) => {
+          if (data.transactions.length === 0) {
+            return (
+              <div className="mt-4 rounded-md border border-dashed border-border p-8 text-center">
+                <Receipt className="mx-auto size-8 text-muted-foreground" />
+                <p className="mt-3 text-sm font-medium">No transactions yet</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add a transaction or clear filters to see ledger entries.
+                </p>
+                <Button className="mt-4" size="sm" onClick={() => setShowForm(true)}>
+                  <Plus className="h-4 w-4" />
+                  Add transaction
                 </Button>
               </div>
-            </div>
-          </>
-        )}
+            )
+          }
+          return (
+            <>
+              <div className="mt-4 space-y-3">
+                {data.transactions.map((txn) => (
+                  <TransactionCard
+                    key={txn.id}
+                    transaction={txn}
+                    categories={categoriesQuery.data ?? []}
+                    merchants={merchantsQuery.data ?? []}
+                    busy={mutationBusy}
+                    onFeedback={setFeedback}
+                    onUpdate={handleUpdate}
+                    onDelete={handleDelete}
+                    onCreateCategory={async (name) => {
+                      const result = await createCategory.mutateAsync({ name })
+                      return result.category
+                    }}
+                    onCreateMerchant={async (name) => {
+                      const result = await createMerchant.mutateAsync({ name })
+                      return result.merchant
+                    }}
+                  />
+                ))}
+              </div>
+              <div className="mt-4 flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Showing {data.offset + 1}–{Math.min(data.offset + data.limit, data.total)} of {data.total}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={offset === 0}
+                    onClick={() => setOffset(Math.max(0, offset - limit))}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={offset + limit >= data.total}
+                    onClick={() => setOffset(offset + limit)}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            </>
+          )
+        }}
       </QueryBoundary>
     </section>
   )

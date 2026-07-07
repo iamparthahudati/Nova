@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { Plus } from 'lucide-react'
+import { CreditCardPanel } from '@/components/finance/credit-card-panel'
 import { ScreenHeader } from '@/components/layout/screen-header'
-import { UtilizationBar } from '@/components/finance/metric-card'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { QueryBoundary } from '@/components/query-boundary'
 import { useCreditCards } from '@/hooks/use-finance'
 import { useCreateCreditCard } from '@/hooks/use-finance-mutations'
 import { ApiError } from '@/lib/api-client'
-import { formatINR } from '@/lib/utils'
 
 export function FinanceCreditCardsScreen() {
   const cards = useCreditCards()
@@ -53,11 +51,11 @@ export function FinanceCreditCardsScreen() {
     <section>
       <ScreenHeader
         title="Credit Cards"
-        description="Limits, utilization, and billing cycles from projections."
+        description="Dedicated credit card management. Each card creates an account and profile automatically."
         actions={
           <Button size="sm" onClick={() => setShowForm((open) => !open)}>
             <Plus className="h-4 w-4" />
-            Add card
+            Add credit card
           </Button>
         }
       />
@@ -129,7 +127,7 @@ export function FinanceCreditCardsScreen() {
                 <span className="text-xs text-muted-foreground">Network</span>
                 <input
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                  placeholder="Visa, Mastercard…"
+                  placeholder="Visa, Mastercard, RuPay…"
                   value={network}
                   onChange={(e) => setNetwork(e.target.value)}
                 />
@@ -159,52 +157,7 @@ export function FinanceCreditCardsScreen() {
         {(data) => (
           <div className="grid gap-4 xl:grid-cols-2">
             {data.map((card) => (
-              <Card key={card.accountId}>
-                <CardHeader>
-                  <div className="flex items-center justify-between">
-                    <CardTitle>{card.name}</CardTitle>
-                    {card.last4 ? <Badge variant="outline">•••• {card.last4}</Badge> : null}
-                  </div>
-                  {card.network ? <p className="text-xs text-muted-foreground">{card.network}</p> : null}
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Credit limit</p>
-                      <p className="font-semibold">{formatINR(card.creditLimit)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Available</p>
-                      <p className="font-semibold">{formatINR(card.availableLimit ?? 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Outstanding</p>
-                      <p className="font-semibold text-rose-400">{formatINR(card.outstanding ?? 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Billing cycle</p>
-                      <p className="font-semibold">
-                        Day {card.statementDay} · due +{card.dueDayOffset}d
-                      </p>
-                    </div>
-                  </div>
-                  <UtilizationBar percent={card.utilizationPercent ?? 0} />
-                  {card.currentStatement ? (
-                    <div className="rounded-md border border-border bg-muted/20 p-3 text-sm">
-                      <p className="font-medium">Current statement</p>
-                      <p className="text-muted-foreground">
-                        {card.currentStatement.periodStart} → {card.currentStatement.periodEnd}
-                      </p>
-                      <div className="mt-2 flex gap-2">
-                        <Badge variant="outline">{card.currentStatement.status}</Badge>
-                        {card.currentStatement.remainingDue != null ? (
-                          <span>Due {formatINR(card.currentStatement.remainingDue)}</span>
-                        ) : null}
-                      </div>
-                    </div>
-                  ) : null}
-                </CardContent>
-              </Card>
+              <CreditCardPanel key={card.accountId} card={card} onFeedback={setFeedback} />
             ))}
           </div>
         )}

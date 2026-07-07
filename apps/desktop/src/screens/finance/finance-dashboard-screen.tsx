@@ -1,17 +1,22 @@
+import { Link } from 'react-router-dom'
 import { ScreenHeader } from '@/components/layout/screen-header'
 import { Amount, MetricCard, UtilizationBar } from '@/components/finance/metric-card'
 import { Badge } from '@/components/ui/badge'
+import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { QueryBoundary } from '@/components/query-boundary'
 import { useFinanceDashboard } from '@/hooks/use-finance'
-import { formatINR } from '@/lib/utils'
+import { cn, formatINR } from '@/lib/utils'
 
 export function FinanceDashboardScreen() {
   const dashboard = useFinanceDashboard()
 
   return (
     <section>
-      <ScreenHeader title="Finance" description="Overview from backend projections — no client-side calculations." />
+      <ScreenHeader
+        title="Finance"
+        description="Overview from backend projections. Recent transactions appear here; rewards and cashback only apply to credit card spend with configured programs."
+      />
       <QueryBoundary query={dashboard} loadingMessage="Loading finance dashboard…" emptyMessage="No finance data yet.">
         {(data) => (
           <>
@@ -67,12 +72,26 @@ export function FinanceDashboardScreen() {
                 </CardContent>
               </Card>
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
                   <CardTitle>Recent transactions</CardTitle>
+                  <Link to="/finance/transactions" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
+                    View all
+                  </Link>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   {data.recentTransactions.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No recent transactions.</p>
+                    <div className="rounded-md border border-dashed border-border p-6 text-center">
+                      <p className="text-sm font-medium">No recent transactions</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Transactions you add under Finance → Transactions show up here.
+                      </p>
+                      <Link
+                        to="/finance/transactions"
+                        className={cn(buttonVariants({ size: 'sm' }), 'mt-4 inline-flex')}
+                      >
+                        Add transaction
+                      </Link>
+                    </div>
                   ) : (
                     data.recentTransactions.map((txn) => (
                       <div

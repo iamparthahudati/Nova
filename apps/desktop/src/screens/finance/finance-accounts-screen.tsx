@@ -1,19 +1,21 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Plus } from 'lucide-react'
+import { AccountCard, AccountTypeSelect } from '@/components/finance/account-card'
 import { ScreenHeader } from '@/components/layout/screen-header'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { QueryBoundary } from '@/components/query-boundary'
-import { useArchiveAccount, useCreateAccount, useCreateTransfer } from '@/hooks/use-finance-mutations'
+import { useCreateAccount, useCreateTransfer } from '@/hooks/use-finance-mutations'
 import { useAccounts } from '@/hooks/use-finance'
 import { ApiError } from '@/lib/api-client'
+import { CREATABLE_ACCOUNT_TYPES, isTransferEligible } from '@/lib/finance/account-types'
 import { formatINR } from '@/lib/utils'
 
 export function FinanceAccountsScreen() {
-  const accounts = useAccounts(false)
+  const [includeArchived, setIncludeArchived] = useState(false)
+  const accounts = useAccounts(includeArchived)
   const createAccount = useCreateAccount()
-  const archiveAccount = useArchiveAccount()
   const createTransfer = useCreateTransfer()
   const [showForm, setShowForm] = useState(false)
   const [showTransfer, setShowTransfer] = useState(false)
@@ -25,6 +27,11 @@ export function FinanceAccountsScreen() {
   const [toAccountId, setToAccountId] = useState<number | ''>('')
   const [transferAmount, setTransferAmount] = useState('')
   const [transferDate, setTransferDate] = useState(new Date().toISOString().slice(0, 10))
+
+  const transferAccounts = useMemo(
+    () => (accounts.data ?? []).filter((account) => isTransferEligible(account)),
+    [accounts.data],
+  )
 
   async function handleTransfer(event: React.FormEvent) {
     event.preventDefault()
@@ -55,6 +62,7 @@ export function FinanceAccountsScreen() {
       })
       setName('')
       setOpeningBalance('0')
+      setAccountType('bank')
       setShowForm(false)
       setFeedback(result.meta.message)
     } catch (error) {
@@ -66,9 +74,16 @@ export function FinanceAccountsScreen() {
     <section>
       <ScreenHeader
         title="Accounts"
-        description="Asset accounts with balances from projection service."
+        description="Master registry for every financial account. Credit cards keep their specialized screen for billing and rewards."
         actions={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            <Button
+              size="sm"
+              variant={includeArchived ? 'secondary' : 'outline'}
+              onClick={() => setIncludeArchived((value) => !value)}
+            >
+              {includeArchived ? 'Hide archived' : 'Show archived'}
+            </Button>
             <Button size="sm" variant="outline" onClick={() => setShowTransfer((open) => !open)}>
               Transfer
             </Button>
@@ -94,7 +109,7 @@ export function FinanceAccountsScreen() {
                 required
               >
                 <option value="">From account</option>
-                {(accounts.data ?? []).map((account) => (
+                {transferAccounts.map((account) => (
                   <option key={account.id} value={account.id}>
                     {account.name}
                   </option>
@@ -107,7 +122,7 @@ export function FinanceAccountsScreen() {
                 required
               >
                 <option value="">To account</option>
-                {(accounts.data ?? []).map((account) => (
+                {transferAccounts.map((account) => (
                   <option key={account.id} value={account.id}>
                     {account.name}
                   </option>
@@ -142,29 +157,29 @@ export function FinanceAccountsScreen() {
             <CardTitle>Create account</CardTitle>
           </CardHeader>
           <CardContent>
-            <form className="grid gap-3 sm:grid-cols-2" onSubmit={handleCreate}>
-              <label className="space-y-1">
+            <form className="space-y-4" onSubmit={handleCreate}>
+              <label className="block space-y-1">
                 <span className="text-xs text-muted-foreground">Name</span>
                 <input
                   className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
+                  placeholder="e.g. HDFC Savings, PhonePe UPI, Home Loan"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
                 />
               </label>
-              <label className="space-y-1">
+              <div className="space-y-2">
                 <span className="text-xs text-muted-foreground">Type</span>
-                <select
-                  className="w-full rounded-md border border-border bg-background px-3 py-2 text-sm"
-                  value={accountType}
-                  onChange={(e) => setAccountType(e.target.value)}
-                >
-                  <option value="cash">Cash</option>
-                  <option value="bank">Bank</option>
-                  <option value="wallet">Wallet</option>
-                </select>
-              </label>
-              <label className="space-y-1">
+                <AccountTypeSelect value={accountType} onChange={setAccountType} options={CREATABLE_ACCOUNT_TYPES} />
+                <p className="text-xs text-muted-foreground">
+                  Credit cards need billing settings.{' '}
+                  <Link to="/finance/credit-cards" className="text-emerald-400 hover:underline">
+                    Create on the Credit Cards screen
+                  </Link>
+                  .
+                </p>
+              </div>
+              <label className="block space-y-1">
                 <span className="text-xs text-muted-foreground">Opening balance</span>
                 <input
                   type="number"
@@ -175,7 +190,7 @@ export function FinanceAccountsScreen() {
                   onChange={(e) => setOpeningBalance(e.target.value)}
                 />
               </label>
-              <div className="flex items-end gap-2">
+              <div className="flex items-center gap-2">
                 <Button type="submit" size="sm" disabled={createAccount.isPending}>
                   Save
                 </Button>
@@ -188,41 +203,60 @@ export function FinanceAccountsScreen() {
         </Card>
       ) : null}
       <QueryBoundary query={accounts} loadingMessage="Loading accounts…" emptyMessage="No accounts yet.">
-        {(data) => (
-          <div className="grid gap-3">
-            {data.map((account) => (
-              <Card key={account.id}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div>
-                    <p className="font-medium">{account.name}</p>
-                    <div className="mt-1 flex gap-2">
-                      <Badge variant="secondary">{account.type}</Badge>
-                      <Badge variant="outline">{account.classification}</Badge>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Opening {formatINR(account.openingBalanceMinor / 100)} on {account.openingBalanceOn}
+        {(data) => {
+          if (data.length === 0) {
+            return (
+              <div className="rounded-md border border-dashed border-border p-8 text-center">
+                <p className="text-sm font-medium">No Accounts Yet</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Create cash, bank, wallet, loan, investment, and other accounts here.
+                </p>
+                <Button className="mt-4" size="sm" onClick={() => setShowForm(true)}>
+                  <Plus className="h-4 w-4" />
+                  New account
+                </Button>
+              </div>
+            )
+          }
+
+          const assets = data.filter((account) => account.classification === 'asset')
+          const liabilities = data.filter((account) => account.classification === 'liability')
+
+          return (
+            <div className="space-y-6">
+              {assets.length > 0 ? (
+                <section className="space-y-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h2 className="text-sm font-medium text-muted-foreground">Assets</h2>
+                    <p className="text-sm font-semibold">
+                      {formatINR(assets.reduce((sum, account) => sum + (account.balance ?? 0), 0))}
                     </p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <p className="text-lg font-semibold">{formatINR(account.balance ?? 0)}</p>
-                    {!account.archivedAt ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        disabled={archiveAccount.isPending}
-                        onClick={() => archiveAccount.mutate(account.id)}
-                      >
-                        Archive
-                      </Button>
-                    ) : (
-                      <Badge>Archived</Badge>
-                    )}
+                  <div className="grid gap-3">
+                    {assets.map((account) => (
+                      <AccountCard key={account.id} account={account} onFeedback={setFeedback} />
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+                </section>
+              ) : null}
+              {liabilities.length > 0 ? (
+                <section className="space-y-3">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <h2 className="text-sm font-medium text-muted-foreground">Liabilities</h2>
+                    <p className="text-sm font-semibold">
+                      {formatINR(liabilities.reduce((sum, account) => sum + (account.balance ?? 0), 0))}
+                    </p>
+                  </div>
+                  <div className="grid gap-3">
+                    {liabilities.map((account) => (
+                      <AccountCard key={account.id} account={account} onFeedback={setFeedback} />
+                    ))}
+                  </div>
+                </section>
+              ) : null}
+            </div>
+          )
+        }}
       </QueryBoundary>
     </section>
   )

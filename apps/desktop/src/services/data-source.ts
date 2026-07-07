@@ -12,7 +12,12 @@ import type {
   ReminderMutationResponse,
   SpendingMutationResponse,
   TaskMutationResponse,
+  UpdateCategoryRequest,
+  UpdateCreditCardRequest,
+  UpdateMerchantRequest,
   UpdateStatementRequest,
+  UpdateAccountRequest,
+  UpdateTransactionRequest,
 } from '@nova/api-contracts'
 import { isMockMode } from '@/config/env'
 import * as mockMutations from '@/dev/mocks/mutations'
@@ -91,10 +96,22 @@ export const dataSource = {
     const response = isMockMode() ? await mockApi.createAccount(input) : await novaApi.createAccountRaw(input)
     return { account: mapAccount(response.item), meta: response.meta }
   },
+  updateAccount: async (accountId: number, input: UpdateAccountRequest) => {
+    const response = isMockMode()
+      ? await mockApi.updateAccount(accountId, input)
+      : await novaApi.updateAccountRaw(accountId, input)
+    return { account: mapAccount(response.item), meta: response.meta }
+  },
   archiveAccount: async (accountId: number) => {
     const response = isMockMode()
       ? await mockApi.archiveAccount(accountId)
       : await novaApi.archiveAccountRaw(accountId)
+    return { account: mapAccount(response.item), meta: response.meta }
+  },
+  restoreAccount: async (accountId: number) => {
+    const response = isMockMode()
+      ? await mockApi.restoreAccount(accountId)
+      : await novaApi.restoreAccountRaw(accountId)
     return { account: mapAccount(response.item), meta: response.meta }
   },
   createCreditCard: async (input: CreateCreditCardRequest) => {
@@ -103,10 +120,28 @@ export const dataSource = {
       : await novaApi.createCreditCardRaw(input)
     return { card: mapCreditCard(response.item), meta: response.meta }
   },
+  updateCreditCard: async (accountId: number, input: UpdateCreditCardRequest) => {
+    const response = isMockMode()
+      ? await mockApi.updateCreditCard(accountId, input)
+      : await novaApi.updateCreditCardRaw(accountId, input)
+    return { card: mapCreditCard(response.item), meta: response.meta }
+  },
   createTransaction: async (input: CreateTransactionRequest) => {
     const response = isMockMode()
       ? await mockApi.createTransaction(input)
       : await novaApi.createTransactionRaw(input)
+    return { meta: response.meta }
+  },
+  updateTransaction: async (transactionId: number, input: UpdateTransactionRequest) => {
+    const response = isMockMode()
+      ? await mockApi.updateTransaction(transactionId, input)
+      : await novaApi.updateTransactionRaw(transactionId, input)
+    return { meta: response.meta }
+  },
+  deleteTransaction: async (transactionId: number) => {
+    const response = isMockMode()
+      ? await mockApi.deleteTransaction(transactionId)
+      : await novaApi.deleteTransactionRaw(transactionId)
     return { meta: response.meta }
   },
   createCategory: async (input: CreateCategoryRequest) => {
@@ -115,6 +150,30 @@ export const dataSource = {
   },
   createMerchant: async (input: CreateMerchantRequest) => {
     const response = isMockMode() ? await mockApi.createMerchant(input) : await novaApi.createMerchantRaw(input)
+    return { merchant: mapMerchant(response.item), meta: response.meta }
+  },
+  updateCategory: async (categoryId: number, input: UpdateCategoryRequest) => {
+    const response = isMockMode()
+      ? await mockApi.updateCategory(categoryId, input)
+      : await novaApi.updateCategoryRaw(categoryId, input)
+    return { category: mapCategory(response.item), meta: response.meta }
+  },
+  deleteCategory: async (categoryId: number) => {
+    const response = isMockMode()
+      ? await mockApi.deleteCategory(categoryId)
+      : await novaApi.deleteCategoryRaw(categoryId)
+    return { category: mapCategory(response.item), meta: response.meta }
+  },
+  updateMerchant: async (merchantId: number, input: UpdateMerchantRequest) => {
+    const response = isMockMode()
+      ? await mockApi.updateMerchant(merchantId, input)
+      : await novaApi.updateMerchantRaw(merchantId, input)
+    return { merchant: mapMerchant(response.item), meta: response.meta }
+  },
+  deleteMerchant: async (merchantId: number) => {
+    const response = isMockMode()
+      ? await mockApi.deleteMerchant(merchantId)
+      : await novaApi.deleteMerchantRaw(merchantId)
     return { merchant: mapMerchant(response.item), meta: response.meta }
   },
   createTransfer: async (input: CreateTransferRequest) => {

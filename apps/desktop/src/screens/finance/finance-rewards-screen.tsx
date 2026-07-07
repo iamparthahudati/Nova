@@ -1,9 +1,12 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ScreenHeader } from '@/components/layout/screen-header'
 import { Badge } from '@/components/ui/badge'
+import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { QueryBoundary } from '@/components/query-boundary'
 import { useRewardLedger, useRewardPrograms } from '@/hooks/use-finance'
+import { cn } from '@/lib/utils'
 
 export function FinanceRewardsScreen() {
   const programs = useRewardPrograms()
@@ -13,9 +16,30 @@ export function FinanceRewardsScreen() {
 
   return (
     <section>
-      <ScreenHeader title="Rewards" description="Programs, balances, and ledger from reward projections." />
-      <QueryBoundary query={programs} loadingMessage="Loading reward programs…" emptyMessage="No reward programs yet.">
-        {(programList) => (
+      <ScreenHeader
+        title="Rewards"
+        description="Reward programs are tied to credit cards. Regular bank/cash transactions do not earn rewards until a card program is configured."
+      />
+      <QueryBoundary query={programs} loadingMessage="Loading reward programs…">
+        {(programList) => {
+          if (programList.length === 0) {
+            return (
+              <div className="rounded-md border border-dashed border-border p-8 text-center">
+                <p className="text-sm font-medium">No reward programs yet</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Create a credit card under Finance → Credit Cards, then configure a reward program for that card.
+                  Reward events appear here when credit card transactions trigger earn rules.
+                </p>
+                <Link
+                  to="/finance/credit-cards"
+                  className={cn(buttonVariants({ size: 'sm' }), 'mt-4 inline-flex')}
+                >
+                  Go to credit cards
+                </Link>
+              </div>
+            )
+          }
+          return (
           <>
             <div className="mb-4 flex flex-wrap gap-2">
               {programList.map((program) => (
@@ -93,7 +117,8 @@ export function FinanceRewardsScreen() {
               )}
             </QueryBoundary>
           </>
-        )}
+          )
+        }}
       </QueryBoundary>
     </section>
   )
