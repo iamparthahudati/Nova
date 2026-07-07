@@ -65,10 +65,25 @@ export function useFinanceTransactions(params?: {
   })
 }
 
+export function useRewardsOverview() {
+  return useQuery({
+    queryKey: queryKeys.finance.rewardsOverview(),
+    queryFn: () => dataSource.getRewardsOverview(),
+  })
+}
+
 export function useRewardPrograms(accountId?: number) {
   return useQuery({
     queryKey: queryKeys.finance.rewards({ accountId }),
     queryFn: () => dataSource.getRewardPrograms(accountId),
+  })
+}
+
+export function useRewardProgramDetail(programId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.finance.rewardDetail(programId ?? 0),
+    queryFn: () => dataSource.getRewardProgramDetail(programId!),
+    enabled: programId !== null,
   })
 }
 

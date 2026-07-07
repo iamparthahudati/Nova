@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
+from typing import Optional
 
 from .aggregates import RewardEvent, RewardProgram
 
@@ -70,3 +72,49 @@ def fold_event_totals(events: list[RewardEvent]) -> tuple[int, int, int, int, in
         elif event.kind == "expired":
             expired += event.amount
     return credit, debit, earned, redeemed, expired
+
+
+def derive_program_status(
+    balance: int,
+    total_earned: int,
+    expiry_note: Optional[str],
+) -> str:
+    if balance > 0 and expiry_note:
+        return "expiring"
+    if balance > 0:
+        return "active"
+    if total_earned > 0:
+        return "depleted"
+    return "new"
+
+
+def fold_monthly_activity(
+    events: list[RewardEvent],
+    months: int,
+    end_on: date,
+) -> list[dict]:
+    """Return month buckets (newest first) with earned/redeemed/expired totals."""
+    buckets: dict[str, dict[str, int]] = {}
+    for event in events:
+        month_key = event.occurred_on[:7]
+        bucket = buckets.setdefault(
+            month_key,
+            {"earned": 0, "redeemed": 0, "expired": 0, "adjusted": 0},
+        )
+        if event.kind in bucket:
+            bucket[event.kind] += event.amount
+
+    rows = []
+    cursor = end_on.replace(day=1)
+    for _ in range(months):
+        key = cursor.strftime("%Y-%m")
+        activity = buckets.get(
+            key,
+            {"earned": 0, "redeemed": 0, "expired": 0, "adjusted": 0},
+        )
+        rows.append({"month": key, **activity})
+        if cursor.month == 1:
+            cursor = cursor.replace(year=cursor.year - 1, month=12)
+        else:
+            cursor = cursor.replace(month=cursor.month - 1)
+    return rows

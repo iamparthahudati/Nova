@@ -21,9 +21,6 @@ from .finance_serializers import (
     serialize_account,
     serialize_cashback_rule,
     serialize_credit_card,
-    serialize_reward_balance,
-    serialize_reward_event,
-    serialize_reward_program,
     serialize_statement,
     serialize_transaction,
 )
@@ -220,12 +217,15 @@ def get_finance_dashboard(today: Optional[date] = None) -> tuple[dict, list[dict
     month_start = today.replace(day=1).isoformat()
     month_end = today.isoformat()
     created_statements: list[dict] = []
-    return _build_dashboard_payload(
-        today=today,
-        month_start=month_start,
-        month_end=month_end,
-        created_statements=created_statements,
-    ), created_statements
+    return (
+        _build_dashboard_payload(
+            today=today,
+            month_start=month_start,
+            month_end=month_end,
+            created_statements=created_statements,
+        ),
+        created_statements,
+    )
 
 
 def list_accounts(include_archived: bool = False) -> list[dict]:
@@ -379,38 +379,6 @@ def serialize_entity(entity) -> dict:
     from .finance_serializers import serialize_entity as _serialize
 
     return _serialize(entity)
-
-
-def list_reward_programs(account_id: Optional[int] = None) -> list[dict]:
-    programs = _reward_programs.list_programs(account_id)
-    rows = []
-    for program in programs:
-        balance = _reward_projections.compute_program_balance(program.id)
-        row = serialize_reward_program(program)
-        row["balance"] = serialize_reward_balance(balance)
-        rows.append(row)
-    return rows
-
-
-def get_reward_program(program_id: int) -> dict:
-    program = _reward_programs.get_program(program_id)
-    balance = _reward_projections.compute_program_balance(program.id)
-    row = serialize_reward_program(program)
-    row["balance"] = serialize_reward_balance(balance)
-    return row
-
-
-def get_reward_ledger(program_id: int, limit: int = 50, offset: int = 0) -> dict:
-    ledger = _reward_projections.build_ledger(program_id, limit, offset)
-    year_start = date.today().replace(month=1, day=1).isoformat()
-    year_end = date.today().isoformat()
-    yearly_earned = _reward_projections.compute_yearly_earned(program_id, year_start, year_end)
-    return {
-        "program": serialize_reward_program(ledger.program),
-        "balance": serialize_reward_balance(ledger.balance),
-        "events": [serialize_reward_event(event) for event in ledger.events],
-        "yearly_earned": yearly_earned,
-    }
 
 
 def list_cashback_rules(program_id: Optional[int] = None) -> list[dict]:

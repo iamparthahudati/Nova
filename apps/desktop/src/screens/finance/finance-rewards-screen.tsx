@@ -1,125 +1,106 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
 import { ScreenHeader } from '@/components/layout/screen-header'
-import { Badge } from '@/components/ui/badge'
-import { buttonVariants } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { QueryBoundary } from '@/components/query-boundary'
-import { useRewardLedger, useRewardPrograms } from '@/hooks/use-finance'
-import { cn } from '@/lib/utils'
+import { RewardLedgerTimeline } from '@/components/finance/reward-ledger-timeline'
+import { RewardProgramCard } from '@/components/finance/reward-program-card'
+import { RewardsEmpty } from '@/components/finance/rewards-empty'
+import { RewardsOverviewPanel } from '@/components/finance/rewards-overview'
+import { RewardsSkeleton } from '@/components/finance/rewards-skeleton'
+import { Button } from '@/components/ui/button'
+import { useRewardLedger, useRewardPrograms, useRewardsOverview } from '@/hooks/use-finance'
 
 export function FinanceRewardsScreen() {
+  const overview = useRewardsOverview()
   const programs = useRewardPrograms()
   const [selectedProgramId, setSelectedProgramId] = useState<number | null>(null)
   const activeProgramId = selectedProgramId ?? programs.data?.[0]?.id ?? null
   const ledger = useRewardLedger(activeProgramId)
 
+  const loading = overview.isLoading || programs.isLoading
+  const error = overview.isError ? overview : programs.isError ? programs : null
+
+  if (loading) {
+    return (
+      <section>
+        <ScreenHeader
+          title="Rewards"
+          description="Reward programs are tied to credit cards. Regular bank/cash transactions do not earn rewards until a card program is configured."
+        />
+        <RewardsSkeleton />
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section>
+        <ScreenHeader title="Rewards" description="Track points and cashback across your credit card programs." />
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+          <p className="font-medium text-destructive">Failed to load rewards</p>
+          <p className="mt-1 text-muted-foreground">{error.error.message}</p>
+          <Button className="mt-3" size="sm" variant="secondary" onClick={() => void error.refetch()}>
+            Retry
+          </Button>
+        </div>
+      </section>
+    )
+  }
+
+  const programList = programs.data ?? []
+
+  if (programList.length === 0) {
+    return (
+      <section>
+        <ScreenHeader
+          title="Rewards"
+          description="Reward programs are tied to credit cards. Regular bank/cash transactions do not earn rewards until a card program is configured."
+        />
+        <RewardsEmpty />
+      </section>
+    )
+  }
+
   return (
-    <section>
+    <section className="space-y-8">
       <ScreenHeader
         title="Rewards"
-        description="Reward programs are tied to credit cards. Regular bank/cash transactions do not earn rewards until a card program is configured."
+        description="Track points and cashback across your credit card programs."
       />
-      <QueryBoundary query={programs} loadingMessage="Loading reward programs…">
-        {(programList) => {
-          if (programList.length === 0) {
-            return (
-              <div className="rounded-md border border-dashed border-border p-8 text-center">
-                <p className="text-sm font-medium">No reward programs yet</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Create a credit card under Finance → Credit Cards, then configure a reward program for that card.
-                  Reward events appear here when credit card transactions trigger earn rules.
-                </p>
-                <Link
-                  to="/finance/credit-cards"
-                  className={cn(buttonVariants({ size: 'sm' }), 'mt-4 inline-flex')}
-                >
-                  Go to credit cards
-                </Link>
-              </div>
-            )
-          }
-          return (
-          <>
-            <div className="mb-4 flex flex-wrap gap-2">
-              {programList.map((program) => (
-                <button
-                  key={program.id}
-                  type="button"
-                  className={`rounded-lg border px-3 py-2 text-sm transition ${
-                    activeProgramId === program.id
-                      ? 'border-primary bg-accent text-accent-foreground'
-                      : 'border-border text-muted-foreground hover:bg-accent/50'
-                  }`}
-                  onClick={() => setSelectedProgramId(program.id)}
-                >
-                  {program.name}
-                </button>
-              ))}
-            </div>
-            <div className="mb-4 grid gap-4 sm:grid-cols-3">
-              {programList
-                .filter((p) => p.id === activeProgramId)
-                .map((program) => (
-                  <Card key={program.id} className="sm:col-span-3">
-                    <CardContent className="flex flex-wrap items-center justify-between gap-4 p-4">
-                      <div>
-                        <p className="font-medium">{program.name}</p>
-                        <p className="text-xs text-muted-foreground">{program.unit}</p>
-                      </div>
-                      <div className="flex gap-6 text-sm">
-                        <div>
-                          <p className="text-muted-foreground">Balance</p>
-                          <p className="text-xl font-semibold">{program.balance?.balance ?? 0}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Earned</p>
-                          <p className="text-xl font-semibold">{program.balance?.totalEarned ?? 0}</p>
-                        </div>
-                        <div>
-                          <p className="text-muted-foreground">Redeemed</p>
-                          <p className="text-xl font-semibold">{program.balance?.totalRedeemed ?? 0}</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-            </div>
-            <QueryBoundary query={ledger} loadingMessage="Loading ledger…" emptyMessage="No reward events yet.">
-              {(data) => (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Reward ledger</CardTitle>
-                    <p className="text-sm text-muted-foreground">Yearly earned: {data.yearlyEarned}</p>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {data.events.length === 0 ? (
-                      <p className="text-sm text-muted-foreground">No events in this ledger.</p>
-                    ) : (
-                      data.events.map((event) => (
-                        <div
-                          key={event.id}
-                          className="flex items-center justify-between rounded-md border border-border bg-muted/30 p-3"
-                        >
-                          <div>
-                            <p className="text-sm font-medium">{event.note || event.kind}</p>
-                            <p className="text-xs text-muted-foreground">{event.occurredOn}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="outline">{event.direction}</Badge>
-                            <span className="font-semibold">{event.amount}</span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </CardContent>
-                </Card>
-              )}
-            </QueryBoundary>
-          </>
-          )
-        }}
-      </QueryBoundary>
+
+      {overview.data ? <RewardsOverviewPanel overview={overview.data} /> : null}
+
+      <div>
+        <h2 className="mb-4 text-base font-semibold">Reward programs</h2>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {programList.map((program) => (
+            <RewardProgramCard
+              key={program.id}
+              program={program}
+              selected={activeProgramId === program.id}
+              onSelect={() => setSelectedProgramId(program.id)}
+            />
+          ))}
+        </div>
+      </div>
+
+      {activeProgramId !== null ? (
+        ledger.isLoading ? (
+          <RewardsSkeleton />
+        ) : ledger.isError ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+            <p className="font-medium text-destructive">Failed to load ledger</p>
+            <p className="mt-1 text-muted-foreground">{ledger.error.message}</p>
+            <Button className="mt-3" size="sm" variant="secondary" onClick={() => void ledger.refetch()}>
+              Retry
+            </Button>
+          </div>
+        ) : ledger.data ? (
+          <RewardLedgerTimeline
+            unit={ledger.data.program.unit}
+            events={ledger.data.events}
+            title={`Ledger · ${ledger.data.program.name}`}
+          />
+        ) : null
+      ) : null}
     </section>
   )
 }

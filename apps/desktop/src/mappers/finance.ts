@@ -5,7 +5,9 @@ import type {
   CreditCardResponse,
   FinanceDashboardResponse,
   RewardLedgerResponse,
+  RewardProgramDetailResponse,
   RewardProgramResponse,
+  RewardsOverviewResponse,
   StatementResponse,
   TransactionResponse,
   TransactionsResponse,
@@ -20,7 +22,10 @@ import type {
   FinanceTransaction,
   RewardEvent,
   RewardLedger,
+  RewardMonthlyHistory,
   RewardProgram,
+  RewardProgramDetail,
+  RewardsOverview,
   TransactionsPage,
   UpcomingDueDate,
   LatestReward,
@@ -177,6 +182,10 @@ export function mapRewardProgram(row: RewardProgramResponse): RewardProgram {
     name: row.name,
     unit: row.unit,
     earnRateNote: row.earn_rate_note,
+    expiryNote: row.expiry_note,
+    accountName: row.account_name,
+    bankName: row.bank_name,
+    status: row.status,
     balance: balance
       ? {
           programId: balance.program_id as number,
@@ -187,6 +196,23 @@ export function mapRewardProgram(row: RewardProgramResponse): RewardProgram {
           totalExpired: balance.total_expired as number,
         }
       : null,
+  }
+}
+
+export function mapRewardsOverview(response: RewardsOverviewResponse): RewardsOverview {
+  return {
+    totalBalance: response.total_balance,
+    totalBalanceCashbackMinor: response.total_balance_cashback_minor,
+    totalBalanceCashback: response.total_balance_cashback,
+    earnedMonth: response.earned_month,
+    earnedYear: response.earned_year,
+    earnedLifetime: response.earned_lifetime,
+    earnedMonthCashbackMinor: response.earned_month_cashback_minor,
+    earnedYearCashbackMinor: response.earned_year_cashback_minor,
+    earnedLifetimeCashbackMinor: response.earned_lifetime_cashback_minor,
+    earnedMonthCashback: response.earned_month_cashback,
+    earnedYearCashback: response.earned_year_cashback,
+    earnedLifetimeCashback: response.earned_lifetime_cashback,
   }
 }
 
@@ -211,9 +237,57 @@ export function mapRewardLedger(response: RewardLedgerResponse): RewardLedger {
         amount: event.amount as number,
         note: event.note as string | null,
         occurredOn: event.occurred_on as string,
+        transactionId: event.transaction_id as number | null,
       }),
     ),
     yearlyEarned: response.yearly_earned,
+    monthlyEarned: response.monthly_earned,
+    lifetimeEarned: response.lifetime_earned,
+  }
+}
+
+export function mapRewardProgramDetail(response: RewardProgramDetailResponse): RewardProgramDetail {
+  const balance = response.balance as Record<string, unknown>
+  return {
+    program: mapRewardProgram(response.program),
+    balance: {
+      programId: balance.program_id as number,
+      unit: balance.unit as string,
+      balance: balance.balance as number,
+      totalEarned: balance.total_earned as number,
+      totalRedeemed: balance.total_redeemed as number,
+      totalExpired: balance.total_expired as number,
+    },
+    status: response.status,
+    accountName: response.account_name,
+    bankName: response.bank_name,
+    earnedMonth: response.earned_month,
+    earnedYear: response.earned_year,
+    earnedLifetime: response.earned_lifetime,
+    monthlyHistory: response.monthly_history.map(
+      (row): RewardMonthlyHistory => ({
+        month: row.month as string,
+        earned: row.earned as number,
+        redeemed: row.redeemed as number,
+        expired: row.expired as number,
+        adjusted: row.adjusted as number,
+      }),
+    ),
+    recentEvents: response.recent_events.map(
+      (event): RewardEvent => ({
+        id: event.id as number,
+        programId: event.program_id as number,
+        kind: event.kind as string,
+        direction: event.direction as string,
+        amount: event.amount as number,
+        note: event.note as string | null,
+        occurredOn: event.occurred_on as string,
+        transactionId: event.transaction_id as number | null,
+      }),
+    ),
+    relatedTransactions: response.related_transactions.map((txn) =>
+      mapTransaction(txn as unknown as TransactionResponse),
+    ),
   }
 }
 
