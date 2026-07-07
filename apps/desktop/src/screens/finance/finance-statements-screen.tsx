@@ -1,21 +1,22 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { CreditCard } from 'lucide-react'
+import {
+  StatementCard,
+  StatementEmptyState,
+  StatementLoadingGrid,
+} from '@/components/finance/statement-card'
 import { ScreenHeader } from '@/components/layout/screen-header'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { QueryBoundary } from '@/components/query-boundary'
+import { Button, buttonVariants } from '@/components/ui/button'
 import { useAccounts, useCreditCards, useStatements } from '@/hooks/use-finance'
-import { usePayStatement, useUpdateStatement } from '@/hooks/use-finance-mutations'
-import { ApiError } from '@/lib/api-client'
-import { formatINR } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 
 export function FinanceStatementsScreen() {
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const accountsQuery = useAccounts(false)
   const cardsQuery = useCreditCards()
+  const accountsQuery = useAccounts(false)
   const cardAccounts = cardsQuery.data ?? []
-  const assetAccounts = (accountsQuery.data ?? []).filter((a) => a.classification === 'asset')
   const paramAccountId = searchParams.get('accountId')
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
     paramAccountId ? Number(paramAccountId) : null,
@@ -26,156 +27,88 @@ export function FinanceStatementsScreen() {
   }, [paramAccountId])
 
   const activeAccountId = selectedAccountId ?? cardAccounts[0]?.accountId ?? null
-  const statements = useStatements(activeAccountId)
-  const payStatement = usePayStatement()
-  const updateStatement = useUpdateStatement()
-  const [feedback, setFeedback] = useState<string | null>(null)
-
-  async function handlePay(statementId: number, amount: string, fromAccountId: number) {
-    setFeedback(null)
-    try {
-      const result = await payStatement.mutateAsync({
-        statementId,
-        input: {
-          from_account_id: fromAccountId,
-          payment_mode: 'partial',
-          amount: Number(amount),
-        },
-      })
-      setFeedback(result.meta.message)
-    } catch (error) {
-      setFeedback(error instanceof ApiError ? error.message : 'Could not pay statement.')
-    }
-  }
-
-  async function handleSetTotals(statementId: number, totalDue: string, minDue: string) {
-    setFeedback(null)
-    try {
-      const result = await updateStatement.mutateAsync({
-        statementId,
-        input: {
-          total_due: totalDue ? Number(totalDue) : undefined,
-          min_due: minDue ? Number(minDue) : undefined,
-        },
-      })
-      setFeedback(result.meta.message)
-    } catch (error) {
-      setFeedback(error instanceof ApiError ? error.message : 'Could not update statement.')
-    }
-  }
+  const statementsQuery = useStatements(activeAccountId)
+  const activeCard = cardAccounts.find((card) => card.accountId === activeAccountId)
+  const loading = cardsQuery.isLoading || accountsQuery.isLoading || statementsQuery.isLoading
+  const error = cardsQuery.error ?? statementsQuery.error
 
   return (
     <section>
-      <ScreenHeader title="Statements" description="Statement summaries with spend, payments, and status." />
-      <div className="mb-4">
-        <select
-          className="rounded-md border border-border bg-background px-3 py-2 text-sm"
-          value={activeAccountId ?? ''}
-          onChange={(e) => setSelectedAccountId(Number(e.target.value))}
-        >
-          {cardAccounts.map((card) => (
-            <option key={card.accountId} value={card.accountId}>
-              {card.name}
-            </option>
+      <ScreenHeader
+        title="Statements"
+        description="Billing cycles, payment status, and spend summaries for every card."
+      />
+
+      {cardAccounts.length > 0 ? (
+        <div className="mb-4">
+          <label className="space-y-1">
+            <span className="text-xs text-muted-foreground">Credit card</span>
+            <select
+              className="w-full max-w-sm rounded-md border border-border bg-background px-3 py-2 text-sm"
+              value={activeAccountId ?? ''}
+              onChange={(e) => setSelectedAccountId(Number(e.target.value))}
+            >
+              {cardAccounts.map((card) => (
+                <option key={card.accountId} value={card.accountId}>
+                  {card.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      ) : null}
+
+      {loading ? <StatementLoadingGrid /> : null}
+
+      {error ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+          <p className="font-medium text-destructive">Failed to load statements</p>
+          <p className="mt-1 text-muted-foreground">{error.message}</p>
+          <Button
+            className="mt-3"
+            size="sm"
+            variant="secondary"
+            onClick={() => {
+              void cardsQuery.refetch()
+              void statementsQuery.refetch()
+            }}
+          >
+            Retry
+          </Button>
+        </div>
+      ) : null}
+
+      {!loading && !error && statementsQuery.data && statementsQuery.data.length > 0 ? (
+        <div className="space-y-4">
+          {statementsQuery.data.map((statement) => (
+            <StatementCard key={statement.id} statement={statement} cardName={activeCard?.name} />
           ))}
-        </select>
-      </div>
-      {feedback ? <p className="mb-4 text-sm text-emerald-400">{feedback}</p> : null}
-      <QueryBoundary
-        query={statements}
-        loadingMessage="Loading statements…"
-        emptyMessage="No statements for this card."
-      >
-        {(data) => (
-          <div className="space-y-3">
-            {data.map((statement) => (
-              <Card key={statement.id}>
-                <CardHeader className="pb-2">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-base">
-                      {statement.periodStart} → {statement.periodEnd}
-                    </CardTitle>
-                    <Badge variant="outline">{statement.status}</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground">Due {statement.dueDate}</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-3 text-sm">
-                    <div>
-                      <p className="text-muted-foreground">Spend</p>
-                      <p className="font-semibold">{formatINR(statement.spend ?? 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Paid</p>
-                      <p className="font-semibold">{formatINR(statement.paid ?? 0)}</p>
-                    </div>
-                    <div>
-                      <p className="text-muted-foreground">Remaining</p>
-                      <p className="font-semibold">{formatINR(statement.remainingDue ?? 0)}</p>
-                    </div>
-                  </div>
-                  <div className="mt-4 grid gap-2 sm:grid-cols-4">
-                    <input
-                      className="rounded-md border border-border bg-background px-2 py-1 text-sm"
-                      placeholder="Total due"
-                      id={`total-${statement.id}`}
-                    />
-                    <input
-                      className="rounded-md border border-border bg-background px-2 py-1 text-sm"
-                      placeholder="Min due"
-                      id={`min-${statement.id}`}
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        const totalDue = (document.getElementById(`total-${statement.id}`) as HTMLInputElement).value
-                        const minDue = (document.getElementById(`min-${statement.id}`) as HTMLInputElement).value
-                        void handleSetTotals(statement.id, totalDue, minDue)
-                      }}
-                    >
-                      Set dues
-                    </Button>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <select
-                      className="rounded-md border border-border bg-background px-2 py-1 text-sm"
-                      id={`from-${statement.id}`}
-                    >
-                      {assetAccounts.map((account) => (
-                        <option key={account.id} value={account.id}>
-                          {account.name}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      type="number"
-                      min="0.01"
-                      step="0.01"
-                      className="w-28 rounded-md border border-border bg-background px-2 py-1 text-sm"
-                      placeholder="Amount"
-                      id={`pay-${statement.id}`}
-                    />
-                    <Button
-                      size="sm"
-                      disabled={payStatement.isPending}
-                      onClick={() => {
-                        const fromAccountId = Number(
-                          (document.getElementById(`from-${statement.id}`) as HTMLSelectElement).value,
-                        )
-                        const amount = (document.getElementById(`pay-${statement.id}`) as HTMLInputElement).value
-                        void handlePay(statement.id, amount, fromAccountId)
-                      }}
-                    >
-                      Pay
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        </div>
+      ) : null}
+
+      {!loading && !error && cardAccounts.length === 0 ? (
+        <StatementEmptyState onBrowseCards={() => navigate('/finance/credit-cards')} />
+      ) : null}
+
+      {!loading && !error && cardAccounts.length > 0 && statementsQuery.data?.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-border bg-muted/10 p-10 text-center">
+          <div className="mx-auto flex size-14 items-center justify-center rounded-full border border-border bg-muted/30">
+            <CreditCard className="size-7 text-muted-foreground" />
           </div>
-        )}
-      </QueryBoundary>
+          <p className="mt-4 text-base font-medium">No statements for {activeCard?.name ?? 'this card'}</p>
+          <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+            Statements generate automatically from your card&apos;s billing cycle once transactions are logged.
+          </p>
+          {activeCard ? (
+            <Link
+              to={`/finance/credit-cards/${activeCard.accountId}`}
+              className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'mt-5 inline-flex')}
+            >
+              View card details
+            </Link>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   )
 }

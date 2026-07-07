@@ -60,6 +60,8 @@ export interface FinanceStatement {
   periodEnd: string
   statementDate: string
   dueDate: string
+  totalDue?: number | null
+  minDue?: number | null
   spend?: number | null
   paid?: number | null
   remainingDue?: number | null

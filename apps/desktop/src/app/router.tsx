@@ -12,6 +12,7 @@ import { FinanceDashboardScreen } from '@/screens/finance/finance-dashboard-scre
 import { FinanceInvestmentsScreen } from '@/screens/finance/finance-investments-screen'
 import { FinanceMerchantsScreen } from '@/screens/finance/finance-merchants-screen'
 import { FinanceRewardsScreen } from '@/screens/finance/finance-rewards-screen'
+import { FinanceStatementDetailScreen } from '@/screens/finance/finance-statement-detail-screen'
 import { FinanceStatementsScreen } from '@/screens/finance/finance-statements-screen'
 import { FinanceTransactionsScreen } from '@/screens/finance/finance-transactions-screen'
 import { HomeScreen } from '@/screens/home-screen'
@@ -45,6 +46,7 @@ export const router = createHashRouter([
           { path: 'merchants', element: <FinanceMerchantsScreen /> },
           { path: 'transactions', element: <FinanceTransactionsScreen /> },
           { path: 'statements', element: <FinanceStatementsScreen /> },
+          { path: 'statements/:statementId', element: <FinanceStatementDetailScreen /> },
           { path: 'rewards', element: <FinanceRewardsScreen /> },
           { path: 'cashback', element: <FinanceCashbackScreen /> },
           { path: 'investments', element: <FinanceInvestmentsScreen /> },

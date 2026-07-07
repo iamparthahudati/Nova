@@ -46,7 +46,7 @@ const mockMerchants = [
 ]
 let nextCategoryId = 4
 let nextMerchantId = 3
-let nextTransactionId = 3
+let nextTransactionId = 5
 const mockTransactions: FinanceTransaction[] = [
   {
     id: 1,
@@ -77,6 +77,36 @@ const mockTransactions: FinanceTransaction[] = [
     accountName: 'Cash',
     categoryName: 'Salary',
     merchantName: null,
+  },
+  {
+    id: 3,
+    accountId: 2,
+    direction: 'debit',
+    kind: 'expense',
+    amount: 12000,
+    amountMinor: 1_200_000,
+    categoryId: 1,
+    merchantId: 2,
+    note: 'Food delivery',
+    occurredOn: '2026-06-02',
+    accountName: 'HDFC Millennia',
+    categoryName: 'Food',
+    merchantName: 'Swiggy',
+  },
+  {
+    id: 4,
+    accountId: 2,
+    direction: 'debit',
+    kind: 'expense',
+    amount: 30000,
+    amountMinor: 3_000_000,
+    categoryId: 2,
+    merchantId: 1,
+    note: 'Electronics',
+    occurredOn: '2026-06-10',
+    accountName: 'HDFC Millennia',
+    categoryName: 'Transport',
+    merchantName: 'Amazon',
   },
 ]
 const mockAccounts: FinanceAccount[] = [
@@ -113,10 +143,12 @@ const mockCreditCards: FinanceCreditCard[] = [
       periodEnd: '2026-06-15',
       statementDate: '2026-06-15',
       dueDate: '2026-07-05',
+      totalDue: 42000,
+      minDue: 4200,
       spend: 42000,
       paid: 0,
       remainingDue: 42000,
-      status: 'generated',
+      status: 'due',
     },
     previousStatement: {
       id: 100,
@@ -125,6 +157,8 @@ const mockCreditCards: FinanceCreditCard[] = [
       periodEnd: '2026-05-15',
       statementDate: '2026-05-15',
       dueDate: '2026-06-04',
+      totalDue: 38500,
+      minDue: 3850,
       spend: 38500,
       paid: 38500,
       remainingDue: 0,
@@ -151,6 +185,8 @@ const mockCreditCards: FinanceCreditCard[] = [
       periodEnd: '2026-06-10',
       statementDate: '2026-06-10',
       dueDate: '2026-06-28',
+      totalDue: 112000,
+      minDue: 11200,
       spend: 112000,
       paid: 20000,
       remainingDue: 92000,
@@ -163,6 +199,8 @@ const mockCreditCards: FinanceCreditCard[] = [
       periodEnd: '2026-05-10',
       statementDate: '2026-05-10',
       dueDate: '2026-05-28',
+      totalDue: 98000,
+      minDue: 9800,
       spend: 98000,
       paid: 98000,
       remainingDue: 0,
@@ -497,6 +535,21 @@ export async function getStatements(accountId: number): Promise<FinanceStatement
   return mockStatements
     .filter((statement) => statement.accountId === accountId)
     .map((statement) => ({ ...statement }))
+}
+
+export async function getStatement(statementId: number): Promise<FinanceStatement> {
+  await latency()
+  const statement = mockStatements.find((row) => row.id === statementId)
+  if (!statement) {
+    throw new Error('Statement not found')
+  }
+  const transactions = mockTransactions.filter(
+    (txn) =>
+      txn.accountId === statement.accountId &&
+      txn.occurredOn >= statement.periodStart &&
+      txn.occurredOn <= statement.periodEnd,
+  )
+  return { ...statement, transactions }
 }
 
 export async function getFinanceTransactions(params?: {

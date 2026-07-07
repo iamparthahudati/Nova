@@ -39,6 +39,14 @@ export function useStatements(accountId: number | null, limit = 24) {
   })
 }
 
+export function useStatement(statementId: number | null) {
+  return useQuery({
+    queryKey: queryKeys.finance.statement(statementId ?? 0),
+    queryFn: () => dataSource.getStatement(statementId!),
+    enabled: statementId !== null,
+  })
+}
+
 export function useFinanceTransactions(params?: {
   accountId?: number
   categoryId?: number

@@ -86,6 +86,8 @@ export const dataSource = {
     isMockMode() ? mockApi.getCreditCard(accountId) : novaApi.fetchCreditCard(accountId),
   getStatements: (accountId: number, limit?: number) =>
     isMockMode() ? mockApi.getStatements(accountId) : novaApi.fetchStatements(accountId, limit),
+  getStatement: (statementId: number) =>
+    isMockMode() ? mockApi.getStatement(statementId) : novaApi.fetchStatement(statementId),
   getFinanceTransactions: (params?: Parameters<typeof novaApi.fetchFinanceTransactions>[0]) =>
     isMockMode() ? mockApi.getFinanceTransactions() : novaApi.fetchFinanceTransactions(params),
   getRewardPrograms: (accountId?: number) =>

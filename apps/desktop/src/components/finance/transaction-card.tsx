@@ -15,11 +15,12 @@ interface TransactionCardProps {
   categories: FinanceCategory[]
   merchants: FinanceMerchant[]
   busy?: boolean
-  onFeedback: (message: string) => void
-  onUpdate: (transactionId: number, values: TransactionFormValues) => Promise<void>
-  onDelete: (transactionId: number) => Promise<void>
-  onCreateCategory: (name: string) => Promise<{ id: number }>
-  onCreateMerchant: (name: string) => Promise<{ id: number }>
+  readOnly?: boolean
+  onFeedback?: (message: string) => void
+  onUpdate?: (transactionId: number, values: TransactionFormValues) => Promise<void>
+  onDelete?: (transactionId: number) => Promise<void>
+  onCreateCategory?: (name: string) => Promise<{ id: number }>
+  onCreateMerchant?: (name: string) => Promise<{ id: number }>
 }
 
 function toFormValues(transaction: FinanceTransaction): TransactionFormValues {
@@ -39,6 +40,7 @@ export function TransactionCard({
   categories,
   merchants,
   busy = false,
+  readOnly = false,
   onFeedback,
   onUpdate,
   onDelete,
@@ -58,20 +60,22 @@ export function TransactionCard({
   }
 
   async function handleUpdate(formValues: TransactionFormValues) {
+    if (!onUpdate) return
     try {
       await onUpdate(transaction.id, formValues)
       setEditing(false)
     } catch (error) {
-      onFeedback(error instanceof Error ? error.message : 'Could not update transaction.')
+      onFeedback?.(error instanceof Error ? error.message : 'Could not update transaction.')
     }
   }
 
   async function handleDelete() {
+    if (!onDelete) return
     try {
       await onDelete(transaction.id)
       setPendingDelete(false)
     } catch (error) {
-      onFeedback(error instanceof Error ? error.message : 'Could not delete transaction.')
+      onFeedback?.(error instanceof Error ? error.message : 'Could not delete transaction.')
     }
   }
 
@@ -108,7 +112,7 @@ export function TransactionCard({
           <Amount value={transaction.amount} direction={transaction.kind} />
         </div>
 
-        {pendingDelete ? (
+        {pendingDelete && !readOnly ? (
           <ConfirmActionBar
             message={`Delete this ${kind.label.toLowerCase()} on ${transaction.accountName ?? 'the account'}? This cannot be undone.`}
             confirmLabel="Delete"
@@ -119,7 +123,7 @@ export function TransactionCard({
           />
         ) : null}
 
-        {editing ? (
+        {editing && !readOnly ? (
           <div className="border-t border-border pt-3">
             <TransactionForm
               mode="edit"
@@ -134,11 +138,11 @@ export function TransactionCard({
                 resetDraft()
                 setEditing(false)
               }}
-              onCreateCategory={onCreateCategory}
-              onCreateMerchant={onCreateMerchant}
+              onCreateCategory={onCreateCategory ?? (async () => ({ id: 0 }))}
+              onCreateMerchant={onCreateMerchant ?? (async () => ({ id: 0 }))}
             />
           </div>
-        ) : (
+        ) : !readOnly ? (
           <div className="flex items-center justify-end gap-1 border-t border-border pt-3">
             <Button
               variant="ghost"
@@ -162,7 +166,7 @@ export function TransactionCard({
               Delete
             </Button>
           </div>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   )

@@ -44,6 +44,11 @@ function mapTransaction(row: TransactionResponse | Record<string, unknown>): Fin
   }
 }
 
+function minorToRupees(minor?: number | null): number | null {
+  if (minor == null) return null
+  return minor / 100
+}
+
 function mapStatement(row: StatementResponse | Record<string, unknown>): FinanceStatement {
   const stmt = row as StatementResponse
   return {
@@ -53,6 +58,8 @@ function mapStatement(row: StatementResponse | Record<string, unknown>): Finance
     periodEnd: stmt.period_end,
     statementDate: stmt.statement_date,
     dueDate: stmt.due_date,
+    totalDue: minorToRupees(stmt.total_due_minor),
+    minDue: minorToRupees(stmt.min_due_minor),
     spend: stmt.spend,
     paid: stmt.paid,
     remainingDue: stmt.remaining_due,

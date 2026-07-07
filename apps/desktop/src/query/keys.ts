@@ -27,6 +27,7 @@ export const queryKeys = {
     statements: (params: { accountId: number; limit?: number }) =>
       [...queryKeys.all, 'finance', 'statements', params] as const,
     statementsAll: () => [...queryKeys.all, 'finance', 'statements'] as const,
+    statement: (statementId: number) => [...queryKeys.all, 'finance', 'statement', statementId] as const,
     transactions: (params?: Record<string, unknown>) =>
       [...queryKeys.all, 'finance', 'transactions', params ?? {}] as const,
     rewards: (params?: { accountId?: number }) =>
